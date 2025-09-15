@@ -661,28 +661,50 @@
 
         // Update vessel status
         function updateVesselStatus(vessels) {
-    // Try real data first (your existing code)
+    const now = new Date();
+    const pacificNow = new Date(now.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
+    
+    // Check if we have vessel location data
     if (vessels && vessels.length > 0) {
-        // ... existing vessel checking code ...
+        // Find vessels on our route
+        const routeVessels = vessels.filter(v => v.RouteID === 5);
+        
+        // Check for recently departed vessel
+        const departedVessel = routeVessels.find(v => 
+            v.LeftDock && v.LeftDock < 30 && !v.AtDock
+        );
+        
+        if (departedVessel && departedVessel.EstimatedArrival) {
+            // Show info about the ferry that just left
+            const arrivalTime = new Date(departedVessel.EstimatedArrival);
+            const minsToArrival = Math.floor((arrivalTime - pacificNow) / 60000);
+            
+            if (minsToArrival > 0 && minsToArrival < 60) {
+                document.getElementById('ferryStatus').textContent = 'Previous Ferry';
+                document.getElementById('ferryStatus').className = 'status-value';
+                // Could also show: `En Route (${minsToArrival}m)`
+                return;
+            }
+        }
     }
     
-    // Add time-based status
-    const now = new Date();
-    const minutes = now.getMinutes();
+    // Otherwise show status for YOUR next ferry
+    if (!window.nextDepartureTime) return;
     
-    // Ferries typically depart within 5 minutes of schedule
-    if (minutes >= 0 && minutes <= 5 || 
-        minutes >= 20 && minutes <= 25 || 
-        minutes >= 40 && minutes <= 45 ||
-        minutes >= 50 && minutes <= 55) {
-        document.getElementById('ferryStatus').textContent = 'Departing Soon';
+    const minutesUntilNext = Math.floor((window.nextDepartureTime - pacificNow) / 60000);
+    
+    if (minutesUntilNext <= 5) {
+        document.getElementById('ferryStatus').textContent = 'Boarding Now';
         document.getElementById('ferryStatus').className = 'status-value warning';
-    } else if (minutes >= 10 && minutes <= 15 ||
-               minutes >= 30 && minutes <= 35) {
-        document.getElementById('ferryStatus').textContent = 'At Dock';
+    } else if (minutesUntilNext <= 20) {
+        document.getElementById('ferryStatus').textContent = 'Boarding Soon';
+        document.getElementById('ferryStatus').className = 'status-value warning';
+    } else if (minutesUntilNext <= 45) {
+        document.getElementById('ferryStatus').textContent = 'On Schedule';
         document.getElementById('ferryStatus').className = 'status-value good';
     } else {
-        document.getElementById('ferryStatus').textContent = 'En Route';
+        // For ferries more than 45 min away, just show "Scheduled"
+        document.getElementById('ferryStatus').textContent = 'Scheduled';
         document.getElementById('ferryStatus').className = 'status-value';
     }
 }
