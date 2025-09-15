@@ -1,5 +1,3 @@
-// Create a new file called 'manifest.json' in your repository:
-
 {
     "name": "Bainbridge Ferry Tracker",
     "short_name": "Ferry Track",
