@@ -778,17 +778,29 @@
 
         // Set direction
         function setDirection(direction, button) {
-            currentDirection = direction;
-            
-            // Update button states
-            document.querySelectorAll('.direction-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            button.classList.add('active');
-            
-            // Reload data for new direction
-            loadFerryData();
+    currentDirection = direction;
+    
+    // Update button states
+    document.querySelectorAll('.direction-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    button.classList.add('active');
+    
+    // Update camera if it's currently visible
+    if (cameraVisible) {
+        const cameraFrame = document.getElementById('cameraFrame');
+        if (currentDirection === 'bainbridge-seattle') {
+            cameraFrame.src = 'https://wsdot.com/Travel/Real-time/Map/?featuretype=camera&featureid=9040';
+            document.getElementById('cameraLocation').textContent = 'Bainbridge Terminal - Holding Lot';
+        } else {
+            cameraFrame.src = 'https://wsdot.com/Travel/Real-time/Map/?featuretype=camera&featureid=9035';
+            document.getElementById('cameraLocation').textContent = 'Seattle - Colman Dock';
         }
+    }
+    
+    // Reload data for new direction
+    loadFerryData();
+}
 
         // Update last updated time
         function updateLastUpdated() {
