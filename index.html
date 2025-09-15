@@ -940,6 +940,56 @@ window.addEventListener('beforeunload', () => {
 
         // Start the app when page loads
         window.addEventListener('load', init);
+        // Camera functionality
+let cameraVisible = false;
+let cameraInterval;
+
+function toggleCamera() {
+    cameraVisible = !cameraVisible;
+    const cameraView = document.getElementById('cameraView');
+    const buttonText = document.getElementById('cameraButtonText');
+    
+    if (cameraVisible) {
+        cameraView.style.display = 'block';
+        buttonText.textContent = 'Hide Parking Lot';
+        updateCameraImage();
+        // Refresh every 30 seconds
+        cameraInterval = setInterval(updateCameraImage, 30000);
+    } else {
+        cameraView.style.display = 'none';
+        buttonText.textContent = 'View Parking Lot';
+        clearInterval(cameraInterval);
+    }
+}
+
+function updateCameraImage() {
+    let cameraUrl, locationText;
+    
+    if (currentDirection === 'bainbridge-seattle') {
+        // Bainbridge terminal cameras
+        cameraUrl = 'https://images.wsdot.wa.gov/nw/003vc00232.jpg';
+        locationText = 'Bainbridge Terminal - Holding Lot';
+    } else {
+        // Seattle terminal camera
+        cameraUrl = 'https://images.wsdot.wa.gov/nw/001vc00070.jpg';
+        locationText = 'Seattle Terminal - Colman Dock';
+    }
+    
+    // Add timestamp to prevent caching
+    const img = document.getElementById('terminalCamera');
+    img.src = cameraUrl + '?t=' + Date.now();
+    document.getElementById('cameraLocation').textContent = locationText;
+}
+
+function refreshCamera() {
+    updateCameraImage();
+    // Visual feedback
+    const img = document.getElementById('terminalCamera');
+    img.style.opacity = '0.5';
+    setTimeout(() => {
+        img.style.opacity = '1';
+    }, 500);
+}
     </script>
 </body>
 </html>
