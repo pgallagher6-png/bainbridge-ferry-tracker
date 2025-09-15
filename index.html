@@ -909,12 +909,10 @@ function toggleCamera() {
         cameraView.style.display = 'block';
         buttonText.textContent = 'Hide Camera';
         
-        // Use the pre-set URL or default to current direction
-        const presetUrl = cameraFrame.getAttribute('data-camera-url');
-        if (presetUrl) {
-            cameraFrame.src = presetUrl;
-        } else {
-            // Fallback to current direction
+        // Clear first to force reload
+        cameraFrame.src = '';
+        
+        setTimeout(() => {
             if (currentDirection === 'bainbridge-seattle') {
                 cameraFrame.src = 'https://wsdot.com/Travel/Real-time/Map/?featuretype=camera&featureid=9040';
                 document.getElementById('cameraLocation').textContent = 'Bainbridge Terminal - Holding Lot';
@@ -922,17 +920,10 @@ function toggleCamera() {
                 cameraFrame.src = 'https://wsdot.com/Travel/Real-time/Map/?featuretype=camera&featureid=9035';
                 document.getElementById('cameraLocation').textContent = 'Seattle - Colman Dock';
             }
-        }
-        
-        // Update location text
-        if (currentDirection === 'bainbridge-seattle') {
-            document.getElementById('cameraLocation').textContent = 'Bainbridge Terminal - Holding Lot';
-        } else {
-            document.getElementById('cameraLocation').textContent = 'Seattle - Colman Dock';
-        }
+        }, 100);
     } else {
         cameraView.style.display = 'none';
-        buttonText.textContent = 'View Camera';
+        buttonText.textContent = 'View Parking Camera';
         cameraFrame.src = '';
     }
 }
@@ -1002,59 +993,6 @@ window.addEventListener('beforeunload', () => {
         // Camera functionality
 let cameraVisible = false;
 let cameraInterval;
-
-function toggleCamera() {
-    cameraVisible = !cameraVisible;
-    const cameraView = document.getElementById('cameraView');
-    const buttonText = document.getElementById('cameraButtonText');
-    const cameraFrame = document.getElementById('cameraFrame');
-    
-    if (cameraVisible) {
-        cameraView.style.display = 'block';
-        buttonText.textContent = 'Hide Camera';
-        
-        // Set camera URL based on direction
-        if (currentDirection === 'bainbridge-seattle') {
-            // Bainbridge terminal camera
-            cameraFrame.src = 'https://wsdot.com/Travel/Real-time/Map/?featuretype=camera&featureid=9040';
-            document.getElementById('cameraLocation').textContent = 'Bainbridge Terminal';
-        } else {
-            // Seattle - need to find the correct camera ID for Colman Dock
-            // For now, link to the general Seattle area
-            cameraFrame.src = 'https://wsdot.com/Travel/Real-time/Map/?featuretype=camera&featureid=9040';
-            document.getElementById('cameraLocation').textContent = 'Seattle Terminal Area';
-        }
-    } else {
-        cameraView.style.display = 'none';
-        buttonText.textContent = 'View Parking Camera';
-        cameraFrame.src = ''; // Clear iframe when hidden
-    }
-}
-
-function updateCameraImage() {
-    let cameraUrl, locationText;
-    
-    if (currentDirection === 'bainbridge-seattle') {
-        cameraUrl = 'https://images.wsdot.wa.gov/nw/003vc00232.jpg';
-        locationText = 'Bainbridge Terminal - Holding Lot';
-    } else {
-        cameraUrl = 'https://images.wsdot.wa.gov/nw/001vc00070.jpg';
-        locationText = 'Seattle Terminal - Colman Dock';
-    }
-    
-    document.getElementById('cameraLink').href = cameraUrl + '?t=' + Date.now();
-    document.getElementById('cameraLocation').textContent = locationText;
-}
-
-function refreshCamera() {
-    updateCameraImage();
-    // Visual feedback
-    const img = document.getElementById('terminalCamera');
-    img.style.opacity = '0.5';
-    setTimeout(() => {
-        img.style.opacity = '1';
-    }, 500);
-}
 
         function shareFerry() {
     // Get the next departure time
