@@ -887,27 +887,32 @@ function updateCameraImage() {
     let cameraUrl, locationText;
     
     if (currentDirection === 'bainbridge-seattle') {
-        // Bainbridge terminal cameras
         cameraUrl = 'https://images.wsdot.wa.gov/nw/003vc00232.jpg';
         locationText = 'Bainbridge Terminal - Holding Lot';
     } else {
-        // Seattle terminal camera
         cameraUrl = 'https://images.wsdot.wa.gov/nw/001vc00070.jpg';
         locationText = 'Seattle Terminal - Colman Dock';
     }
     
-    // Add timestamp to prevent caching
     const img = document.getElementById('terminalCamera');
-    img.src = cameraUrl + '?t=' + Date.now();
-    document.getElementById('cameraLocation').textContent = locationText;
     
-    // Update timestamp
-    const now = new Date();
-    const timeString = now.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-    });
+    // Create new image to test loading
+    const testImg = new Image();
+    testImg.onload = function() {
+        // Image loaded successfully
+        img.src = this.src;
+        img.style.display = 'block';
+    };
+    testImg.onerror = function() {
+        // If direct loading fails, try opening in new tab
+        img.style.display = 'none';
+        document.getElementById('cameraLocation').innerHTML = 
+            `${locationText} - <a href="${cameraUrl}" target="_blank" style="color: #667eea;">Open Camera in New Tab</a>`;
+    };
+    
+    // Add timestamp and try to load
+    testImg.src = cameraUrl + '?t=' + Date.now();
+    document.getElementById('cameraLocation').textContent = locationText;
 }
 
 function refreshCamera() {
