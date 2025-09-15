@@ -681,44 +681,45 @@
 
         // Update terminal status
         function updateTerminalStatus(terminals) {
-            if (!terminals || terminals.length === 0) {
-                document.getElementById('spaceAvailable').textContent = 'Normal';
-                document.getElementById('waitTime').textContent = '~15 min';
-                return;
-            }
+    if (!terminals || terminals.length === 0) {
+        document.getElementById('spaceAvailable').textContent = 'Check Terminal';
+        document.getElementById('waitTime').textContent = '< 15 min';
+        return;
+    }
 
-            // Get the departing terminal based on direction
-            const departingTerminalId = currentDirection === 'bainbridge-seattle' ? 3 : 7;
-            const terminal = terminals.find(t => t.TerminalID === departingTerminalId);
-            
-            if (terminal && terminal.WaitTimes && terminal.WaitTimes.length > 0) {
-                const wait = terminal.WaitTimes[0];
-                
-                // Update wait time
-                if (wait.WaitTimeMinutes !== undefined && wait.WaitTimeMinutes !== null) {
-                    document.getElementById('waitTime').textContent = `${wait.WaitTimeMinutes} min`;
-                } else {
-                    document.getElementById('waitTime').textContent = '< 15 min';
-                }
-                
-                // Update space available
-                if (wait.SpacesAvailable !== undefined && wait.SpacesAvailable !== null) {
-                    document.getElementById('spaceAvailable').textContent = wait.SpacesAvailable;
-                    
-                    const spaceElement = document.getElementById('spaceAvailable');
-                    if (wait.SpacesAvailable > 50) {
-                        spaceElement.className = 'status-value good';
-                    } else if (wait.SpacesAvailable > 20) {
-                        spaceElement.className = 'status-value warning';
-                    } else {
-                        spaceElement.className = 'status-value alert';
-                    }
-                } else {
-                    document.getElementById('spaceAvailable').textContent = 'Normal';
-                    document.getElementById('spaceAvailable').className = 'status-value good';
-                }
-            }
+    // Get the departing terminal based on direction
+    const departingTerminalId = currentDirection === 'bainbridge-seattle' ? 3 : 7;
+    const terminal = terminals.find(t => t.TerminalID === departingTerminalId);
+    
+    if (terminal && terminal.WaitTimes && terminal.WaitTimes.length > 0) {
+        // Find wait time for route 5 specifically
+        const routeWait = terminal.WaitTimes.find(w => w.RouteID === 5) || terminal.WaitTimes[0];
+        
+        // Update wait time
+        if (routeWait.WaitTimeMinutes !== undefined && routeWait.WaitTimeMinutes !== null) {
+            document.getElementById('waitTime').textContent = `${routeWait.WaitTimeMinutes} min`;
+        } else {
+            document.getElementById('waitTime').textContent = '< 15 min';
         }
+        
+        // Update space available
+        if (routeWait.SpacesAvailable !== undefined && routeWait.SpacesAvailable !== null) {
+            document.getElementById('spaceAvailable').textContent = `${routeWait.SpacesAvailable} spaces`;
+            
+            const spaceElement = document.getElementById('spaceAvailable');
+            if (routeWait.SpacesAvailable > 50) {
+                spaceElement.className = 'status-value good';
+            } else if (routeWait.SpacesAvailable > 20) {
+                spaceElement.className = 'status-value warning';
+            } else {
+                spaceElement.className = 'status-value alert';
+            }
+        } else {
+            document.getElementById('spaceAvailable').textContent = 'Check Terminal';
+            document.getElementById('spaceAvailable').className = 'status-value';
+        }
+    }
+}
 
         // Display alerts
         function displayAlerts(alerts) {
