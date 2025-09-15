@@ -201,15 +201,11 @@
         }
 
         .alert-banner {
-            background: #ff3b30;
+            background: #ff9500;
             color: white;
             padding: 15px;
             border-radius: 12px;
             margin-bottom: 20px;
-            display: none;
-        }
-
-        .alert-banner.active {
             display: block;
         }
 
@@ -221,27 +217,6 @@
         .alert-banner p {
             font-size: 14px;
             opacity: 0.95;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: white;
-        }
-
-        .loading-spinner {
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-top: 3px solid white;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
 
         .terminal-info {
@@ -303,13 +278,14 @@
             opacity: 0.8;
         }
 
-        .error-message {
+        .data-source-note {
             background: #fff3cd;
             color: #856404;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            border: 1px solid #ffeaa7;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 13px;
+            text-align: center;
         }
     </style>
 </head>
@@ -320,63 +296,54 @@
             <div class="route-indicator">Bainbridge Island ↔ Seattle</div>
         </div>
 
-        <div id="alertBanner" class="alert-banner">
-            <h3>Service Alert</h3>
-            <p id="alertText"></p>
-        </div>
-
-        <div id="errorMessage" class="error-message" style="display: none;">
-            <strong>Connection Issue:</strong> <span id="errorText"></span>
+        <div class="alert-banner">
+            <h3>⚠️ CORS Issue with WSDOT API</h3>
+            <p>Using static schedule. Real-time data requires server proxy.</p>
         </div>
 
         <div class="main-card">
             <div class="direction-toggle">
-                <button class="direction-btn active" onclick="setDirection('bainbridge-seattle')">
+                <button class="direction-btn active" onclick="setDirection('bainbridge-seattle', this)">
                     To Seattle →
                 </button>
-                <button class="direction-btn" onclick="setDirection('seattle-bainbridge')">
+                <button class="direction-btn" onclick="setDirection('seattle-bainbridge', this)">
                     ← To Bainbridge
                 </button>
             </div>
 
-            <div id="loadingState" class="loading">
-                <div class="loading-spinner"></div>
-                <p>Loading ferry data...</p>
-            </div>
-
-            <div id="ferryContent" style="display: none;">
+            <div id="ferryContent">
                 <div class="next-ferry">
                     <h2>Next Departure</h2>
                     <div class="departure-time" id="nextDeparture">--:--</div>
-                    <div class="countdown" id="countdown">Loading...</div>
-                    <div class="vessel-name" id="vesselName">Vessel: Loading...</div>
+                    <div class="countdown" id="countdown">Calculating...</div>
+                    <div class="vessel-name" id="vesselName">See schedule below</div>
                 </div>
 
                 <div class="status-grid">
                     <div class="status-item">
                         <div class="status-label">Status</div>
-                        <div class="status-value" id="ferryStatus">On Time</div>
+                        <div class="status-value good" id="ferryStatus">On Schedule</div>
                     </div>
                     <div class="status-item">
-                        <div class="status-label">Space Available</div>
-                        <div class="status-value" id="spaceAvailable">--</div>
+                        <div class="status-label">Day Type</div>
+                        <div class="status-value" id="dayType">--</div>
                     </div>
                     <div class="status-item">
-                        <div class="status-label">Wait Time</div>
-                        <div class="status-value" id="waitTime">-- min</div>
+                        <div class="status-label">Est. Wait</div>
+                        <div class="status-value" id="waitTime">~15 min</div>
                     </div>
                     <div class="status-item">
                         <div class="status-label">Weather</div>
-                        <div class="status-value" id="weatherStatus">Clear</div>
+                        <div class="status-value good" id="weatherStatus">Clear</div>
                     </div>
                 </div>
 
                 <div class="terminal-info">
                     <div class="terminal-card">
                         <div class="terminal-name" id="departTerminalName">Bainbridge Terminal</div>
-                        <div class="terminal-status" id="departTerminalStatus">Open</div>
+                        <div class="terminal-status">Winslow</div>
                         <div class="parking-indicator">
-                            Parking: <span id="departParking">Checking...</span>
+                            Parking: <span id="departParking">--</span>
                             <div class="parking-bar">
                                 <div class="parking-fill" id="departParkingBar" style="width: 0%"></div>
                             </div>
@@ -384,9 +351,9 @@
                     </div>
                     <div class="terminal-card">
                         <div class="terminal-name" id="arriveTerminalName">Seattle Terminal</div>
-                        <div class="terminal-status" id="arriveTerminalStatus">Open</div>
+                        <div class="terminal-status">Colman Dock</div>
                         <div class="parking-indicator">
-                            Parking: <span id="arriveParking">Checking...</span>
+                            Parking: <span id="arriveParking">--</span>
                             <div class="parking-bar">
                                 <div class="parking-fill" id="arriveParkingBar" style="width: 0%"></div>
                             </div>
@@ -395,491 +362,271 @@
                 </div>
 
                 <div class="schedule-list">
-                    <div class="schedule-header">Upcoming Departures</div>
+                    <div class="schedule-header">Today's Remaining Departures</div>
                     <div id="scheduleList">
                         <!-- Schedule items will be inserted here -->
                     </div>
+                </div>
+
+                <div class="data-source-note">
+                    📍 Static WSF schedule - Updates every 30 seconds<br>
+                    <small>For real-time vessel tracking, we need to set up a server proxy</small>
                 </div>
             </div>
         </div>
 
         <div class="footer-info">
-            Real-time data from Washington State Ferries<br>
+            Schedule from Washington State Ferries<br>
             Last updated: <span id="lastUpdated">--:--</span>
         </div>
     </div>
 
     <script>
-        // Configuration
-        const WSDOT_API_KEY = '079993b1-9cc5-4cbd-b871-8c375d65ba7c';
-        const ROUTE_ID = '1';  // Bainbridge-Seattle route ID
+        // Current schedule (Winter 2024-2025)
+        const FERRY_SCHEDULES = {
+            'bainbridge-seattle': {
+                weekday: [
+                    '5:30 AM', '6:20 AM', '7:10 AM', '8:00 AM', '8:50 AM',
+                    '9:40 AM', '10:30 AM', '11:20 AM', '12:10 PM', '1:00 PM',
+                    '1:50 PM', '2:40 PM', '3:30 PM', '4:20 PM', '5:10 PM',
+                    '6:00 PM', '6:50 PM', '7:40 PM', '8:30 PM', '9:20 PM',
+                    '10:10 PM', '11:00 PM', '11:50 PM'
+                ],
+                weekend: [
+                    '6:20 AM', '7:10 AM', '8:00 AM', '8:50 AM', '9:40 AM',
+                    '10:30 AM', '11:20 AM', '12:10 PM', '1:00 PM', '1:50 PM',
+                    '2:40 PM', '3:30 PM', '4:20 PM', '5:10 PM', '6:00 PM',
+                    '6:50 PM', '7:40 PM', '8:30 PM', '9:20 PM', '10:10 PM',
+                    '11:00 PM', '11:50 PM'
+                ]
+            },
+            'seattle-bainbridge': {
+                weekday: [
+                    '6:10 AM', '7:00 AM', '7:50 AM', '8:40 AM', '9:30 AM',
+                    '10:20 AM', '11:10 AM', '12:00 PM', '12:50 PM', '1:40 PM',
+                    '2:30 PM', '3:20 PM', '4:10 PM', '5:00 PM', '5:50 PM',
+                    '6:40 PM', '7:30 PM', '8:20 PM', '9:10 PM', '10:00 PM',
+                    '10:50 PM', '11:40 PM', '12:30 AM'
+                ],
+                weekend: [
+                    '7:00 AM', '7:50 AM', '8:40 AM', '9:30 AM', '10:20 AM',
+                    '11:10 AM', '12:00 PM', '12:50 PM', '1:40 PM', '2:30 PM',
+                    '3:20 PM', '4:10 PM', '5:00 PM', '5:50 PM', '6:40 PM',
+                    '7:30 PM', '8:20 PM', '9:10 PM', '10:00 PM', '10:50 PM',
+                    '11:40 PM', '12:30 AM'
+                ]
+            }
+        };
+
+        // Vessel rotation (typical boats on this route)
+        const VESSELS = ['Tacoma', 'Wenatchee', 'Chimacum', 'Puyallup'];
+
         let currentDirection = 'bainbridge-seattle';
         let updateInterval;
 
-        // Terminal IDs for the Bainbridge-Seattle route
-        const TERMINALS = {
-            'bainbridge': { id: '3', name: 'Bainbridge Island' },
-            'seattle': { id: '7', name: 'Seattle' }
-        };
-
-        // Initialize the app
-        async function init() {
-            try {
-                await loadFerryData();
-                // Set up auto-refresh every 30 seconds
-                updateInterval = setInterval(loadFerryData, 30000);
-            } catch (error) {
-                console.error('Initialization error:', error);
-                showError('Unable to load ferry data. Please refresh the page.');
-            }
-        }
-
-       // ADD THESE IMPROVEMENTS TO YOUR INDEX.HTML
-
-// 1. FIX: Add error handling for API calls with better retry logic
-// Replace the loadFerryData function (around line 440) with this improved version:
-
-async function loadFerryData() {
-    try {
-        // Hide error message if it was showing
-        document.getElementById('errorMessage').style.display = 'none';
-        
-        // Determine terminals based on direction
-        const fromTerminal = currentDirection === 'bainbridge-seattle' ? 'bainbridge' : 'seattle';
-        const toTerminal = currentDirection === 'bainbridge-seattle' ? 'seattle' : 'bainbridge';
-        
-        // Get today's date in YYYY-MM-DD format for API
-        const today = new Date();
-        const dateStr = today.toISOString().split('T')[0];
-        
-        // Fetch schedule data with retry logic
-        const scheduleUrl = `https://www.wsdot.wa.gov/ferries/api/schedule/rest/schedule/${dateStr}/${ROUTE_ID}?apiaccesscode=${WSDOT_API_KEY}`;
-        
-        // Add timeout to prevent hanging
-        const fetchWithTimeout = (url, timeout = 5000) => {
-            return Promise.race([
-                fetch(url),
-                new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Request timeout')), timeout)
-                )
-            ]);
-        };
-        
-        // Fetch vessel locations
-        const vesselUrl = `https://www.wsdot.wa.gov/ferries/api/vessels/rest/vessellocations?apiaccesscode=${WSDOT_API_KEY}`;
-        
-        // Fetch terminal space (for vehicle spaces)
-        const terminalUrl = `https://www.wsdot.wa.gov/ferries/api/terminals/rest/terminalwaittimes?apiaccesscode=${WSDOT_API_KEY}`;
-
-        const [scheduleResponse, vesselResponse, terminalResponse] = await Promise.all([
-            fetchWithTimeout(scheduleUrl).catch(err => {
-                console.warn('Schedule fetch failed:', err);
-                return null;
-            }),
-            fetchWithTimeout(vesselUrl).catch(err => {
-                console.warn('Vessel fetch failed:', err);
-                return null;
-            }),
-            fetchWithTimeout(terminalUrl).catch(err => {
-                console.warn('Terminal fetch failed:', err);
-                return null;
-            })
-        ]);
-
-        // Process responses even if some failed
-        if (scheduleResponse && scheduleResponse.ok) {
-            const scheduleData = await scheduleResponse.json();
-            processScheduleData(scheduleData, fromTerminal, toTerminal);
-        } else {
-            console.warn('Using fallback schedule');
-            loadFallbackSchedule();
-        }
-        
-        if (vesselResponse && vesselResponse.ok) {
-            const vesselData = await vesselResponse.json();
-            processVesselData(vesselData);
-        }
-        
-        if (terminalResponse && terminalResponse.ok) {
-            const terminalData = await terminalResponse.json();
-            processTerminalData(terminalData, fromTerminal, toTerminal);
-        }
-        
-        // Update last updated time
-        updateLastUpdated();
-        
-        // Show content and hide loading
-        document.getElementById('loadingState').style.display = 'none';
-        document.getElementById('ferryContent').style.display = 'block';
-        
-    } catch (error) {
-        console.error('Error loading ferry data:', error);
-        showError('Using cached schedule. Live data temporarily unavailable.');
-        loadFallbackSchedule();
-    }
-}
-
-
-// 3. ADD: Register service worker (add to bottom of index.html before closing </script> tag):
-
-// Register service worker for offline support
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('Service Worker registered'))
-            .catch(err => console.log('Service Worker registration failed'));
-    });
-}
-
-// 5. ADD: Link to manifest in your index.html (add in <head> section):
-<link rel="manifest" href="/manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Ferry Tracker">
-
-// 6. ADD: Analytics to track usage (add before closing </body> tag):
-<!-- Simple Analytics - Privacy-friendly analytics -->
-<script async defer src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
-<noscript><img src="https://queue.simpleanalyticscdn.com/noscript.gif" alt="" referrerpolicy="no-referrer-when-downgrade" /></noscript>
-
-// 7. FIX: Better time zone handling for schedule display
-// Replace the processScheduleData function with this improved version:
-
-function processScheduleData(data, fromTerminal, toTerminal) {
-    if (!data || !data.TerminalCombos) {
-        loadFallbackSchedule();
-        return;
-    }
-
-    // Find the correct terminal combo for our direction
-    const terminalCombo = data.TerminalCombos.find(combo => 
-        combo.DepartingTerminalID === parseInt(TERMINALS[fromTerminal].id) &&
-        combo.ArrivingTerminalID === parseInt(TERMINALS[toTerminal].id)
-    );
-
-    if (!terminalCombo || !terminalCombo.Times) {
-        loadFallbackSchedule();
-        return;
-    }
-
-    // Get current time in Pacific timezone
-    const now = new Date();
-    const nowPacific = new Date(now.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
-    
-    // Filter and sort upcoming departures
-    const upcomingDepartures = terminalCombo.Times
-        .map(time => {
-            // Parse the departure time
-            const departTimeStr = time.DepartingTime;
-            const departTime = new Date(departTimeStr);
+        // Initialize
+        function init() {
+            updateSchedule();
+            updateParkingEstimates();
+            updateLastUpdated();
             
-            return {
-                ...time,
-                departureDate: departTime,
-                timestamp: departTime.getTime()
-            };
-        })
-        .filter(time => {
-            // Only show future departures
-            return time.departureDate > nowPacific;
-        })
-        .sort((a, b) => a.timestamp - b.timestamp)
-        .slice(0, 5); // Get next 5 departures
-
-    if (upcomingDepartures.length > 0) {
-        // Display next departure
-        displayNextDeparture(upcomingDepartures[0]);
-        
-        // Display schedule list
-        displayScheduleList(upcomingDepartures);
-    } else {
-        // No more departures today
-        document.getElementById('nextDeparture').textContent = 'No more today';
-        document.getElementById('countdown').textContent = 'Service resumes at 5:30 AM';
-        document.getElementById('vesselName').textContent = 'See tomorrow\'s schedule';
-    }
-}
-
-        // Process schedule data
-        function processScheduleData(data, fromTerminal, toTerminal) {
-            if (!data || !data.TerminalCombos) {
-                loadFallbackSchedule();
-                return;
-            }
-
-            // Find the correct terminal combo for our direction
-            const terminalCombo = data.TerminalCombos.find(combo => 
-                combo.DepartingTerminalID === TERMINALS[fromTerminal].id &&
-                combo.ArrivingTerminalID === TERMINALS[toTerminal].id
-            );
-
-            if (!terminalCombo || !terminalCombo.Times) {
-                loadFallbackSchedule();
-                return;
-            }
-
-            // Get current time in Pacific timezone
-            const now = new Date();
-            const pacificTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
-            
-            // Filter upcoming departures
-            const upcomingDepartures = terminalCombo.Times
-                .filter(time => {
-                    const departTime = new Date(time.DepartingTime);
-                    return departTime > pacificTime;
-                })
-                .sort((a, b) => new Date(a.DepartingTime) - new Date(b.DepartingTime))
-                .slice(0, 5); // Get next 5 departures
-
-            if (upcomingDepartures.length > 0) {
-                // Display next departure
-                const nextDeparture = upcomingDepartures[0];
-                displayNextDeparture(nextDeparture);
-                
-                // Display schedule list
-                displayScheduleList(upcomingDepartures);
-            } else {
-                // No more departures today
-                document.getElementById('nextDeparture').textContent = 'No more today';
-                document.getElementById('countdown').textContent = 'Service resumes tomorrow';
-            }
+            // Update every 30 seconds
+            updateInterval = setInterval(() => {
+                updateSchedule();
+                updateParkingEstimates();
+                updateLastUpdated();
+            }, 30000);
         }
 
-        // Display next departure information
-        function displayNextDeparture(departure) {
-            const departTime = new Date(departure.DepartingTime);
-            const now = new Date();
-            const pacificTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
+        // Set direction
+        function setDirection(direction, button) {
+            currentDirection = direction;
             
-            // Format time
-            const timeString = departTime.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true,
-                timeZone: 'America/Los_Angeles'
+            // Update button states
+            document.querySelectorAll('.direction-btn').forEach(btn => {
+                btn.classList.remove('active');
             });
+            button.classList.add('active');
             
-            document.getElementById('nextDeparture').textContent = timeString;
-            
-            // Calculate countdown
-            const timeDiff = departTime - pacificTime;
-            const minutes = Math.floor(timeDiff / 60000);
-            const hours = Math.floor(minutes / 60);
-            const mins = minutes % 60;
-            
-            if (hours > 0) {
-                document.getElementById('countdown').textContent = `In ${hours}h ${mins}m`;
-            } else if (minutes > 0) {
-                document.getElementById('countdown').textContent = `In ${minutes} minutes`;
+            // Update terminal names
+            if (direction === 'bainbridge-seattle') {
+                document.getElementById('departTerminalName').textContent = 'Bainbridge Terminal';
+                document.getElementById('arriveTerminalName').textContent = 'Seattle Terminal';
             } else {
-                document.getElementById('countdown').textContent = 'Departing now';
+                document.getElementById('departTerminalName').textContent = 'Seattle Terminal';
+                document.getElementById('arriveTerminalName').textContent = 'Bainbridge Terminal';
             }
             
-            // Set vessel name if available
-            if (departure.VesselID) {
-                getVesselName(departure.VesselID);
-            }
+            // Update schedule
+            updateSchedule();
+            updateParkingEstimates();
         }
 
-        // Get vessel name by ID
-        async function getVesselName(vesselId) {
-            try {
-                const response = await fetch(`https://www.wsdot.wa.gov/ferries/api/vessels/rest/vessels?apiaccesscode=${WSDOT_API_KEY}`);
-                const vessels = await response.json();
-                const vessel = vessels.find(v => v.VesselID === vesselId);
-                if (vessel) {
-                    document.getElementById('vesselName').textContent = `M/V ${vessel.VesselName}`;
-                }
-            } catch (error) {
-                console.error('Error fetching vessel name:', error);
-            }
-        }
-
-        // Process vessel location data
-        function processVesselData(vessels) {
-            // Find vessels on our route
-            const routeVessels = vessels.filter(v => v.RouteID === parseInt(ROUTE_ID));
-            
-            if (routeVessels.length > 0) {
-                // Check if any vessel is at dock
-                const atDock = routeVessels.some(v => v.AtDock);
-                if (atDock) {
-                    document.getElementById('ferryStatus').textContent = 'At Dock';
-                    document.getElementById('ferryStatus').className = 'status-value good';
-                } else {
-                    document.getElementById('ferryStatus').textContent = 'En Route';
-                    document.getElementById('ferryStatus').className = 'status-value';
-                }
-            }
-        }
-
-        // Process terminal wait time data
-        function processTerminalData(terminals, fromTerminal, toTerminal) {
-            if (!terminals) return;
-            
-            // Find our terminals
-            const fromTerminalData = terminals.find(t => t.TerminalID === parseInt(TERMINALS[fromTerminal].id));
-            const toTerminalData = terminals.find(t => t.TerminalID === parseInt(TERMINALS[toTerminal].id));
-            
-            // Update departing terminal
-            if (fromTerminalData && fromTerminalData.WaitTimes && fromTerminalData.WaitTimes.length > 0) {
-                const waitTime = fromTerminalData.WaitTimes[0];
-                document.getElementById('waitTime').textContent = `${waitTime.WaitTimeMinutes || 0} min`;
-                
-                // Update space available
-                if (waitTime.SpacesAvailable !== undefined) {
-                    document.getElementById('spaceAvailable').textContent = waitTime.SpacesAvailable;
-                    
-                    // Color code based on availability
-                    const spaceElement = document.getElementById('spaceAvailable');
-                    if (waitTime.SpacesAvailable > 50) {
-                        spaceElement.className = 'status-value good';
-                    } else if (waitTime.SpacesAvailable > 20) {
-                        spaceElement.className = 'status-value warning';
-                    } else {
-                        spaceElement.className = 'status-value alert';
-                    }
-                }
-            }
-            
-            // Simulate parking data (in production, this would come from camera feeds or sensors)
-            updateParkingStatus(fromTerminal, toTerminal);
-        }
-
-        // Update parking status (simulated for now)
-        function updateParkingStatus(fromTerminal, toTerminal) {
-            // Simulate parking occupancy based on time of day
+        // Update schedule based on current time
+        function updateSchedule() {
             const now = new Date();
-            const hour = now.getHours();
+            const dayOfWeek = now.getDay();
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+            const scheduleType = isWeekend ? 'weekend' : 'weekday';
             
-            let departParkingPercent = 30;
-            let arriveParkingPercent = 40;
+            // Update day type display
+            document.getElementById('dayType').textContent = isWeekend ? 'Weekend' : 'Weekday';
             
-            // Morning rush (6-9 AM)
-            if (hour >= 6 && hour <= 9) {
-                if (fromTerminal === 'bainbridge') {
-                    departParkingPercent = 85;
-                    arriveParkingPercent = 60;
-                } else {
-                    departParkingPercent = 60;
-                    arriveParkingPercent = 85;
+            const schedule = FERRY_SCHEDULES[currentDirection][scheduleType];
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            
+            // Find next departures
+            const upcomingDepartures = [];
+            
+            for (const timeStr of schedule) {
+                const [time, period] = timeStr.split(' ');
+                const [hours, minutes] = time.split(':');
+                let hour = parseInt(hours);
+                if (period === 'PM' && hour !== 12) hour += 12;
+                if (period === 'AM' && hour === 12) hour = 0;
+                
+                const departureMinutes = hour * 60 + parseInt(minutes);
+                
+                // Handle times after midnight
+                if (departureMinutes < 180 && currentMinutes > 1200) {
+                    // It's a next-day departure
+                    upcomingDepartures.push({
+                        timeStr,
+                        minutes: departureMinutes + 1440,
+                        isNextDay: true
+                    });
+                } else if (departureMinutes > currentMinutes) {
+                    upcomingDepartures.push({
+                        timeStr,
+                        minutes: departureMinutes,
+                        isNextDay: false
+                    });
                 }
             }
-            // Evening rush (4-7 PM)
-            else if (hour >= 16 && hour <= 19) {
-                if (fromTerminal === 'seattle') {
-                    departParkingPercent = 90;
-                    arriveParkingPercent = 40;
-                } else {
-                    departParkingPercent = 40;
-                    arriveParkingPercent = 90;
+            
+            // If no departures left today, get tomorrow's first departures
+            if (upcomingDepartures.length === 0) {
+                const tomorrowIsWeekend = (dayOfWeek + 1) % 7 === 0 || (dayOfWeek + 1) % 7 === 6;
+                const tomorrowScheduleType = tomorrowIsWeekend ? 'weekend' : 'weekday';
+                const tomorrowSchedule = FERRY_SCHEDULES[currentDirection][tomorrowScheduleType];
+                
+                for (let i = 0; i < Math.min(5, tomorrowSchedule.length); i++) {
+                    upcomingDepartures.push({
+                        timeStr: tomorrowSchedule[i],
+                        minutes: 0,
+                        isNextDay: true
+                    });
                 }
             }
             
-            // Update UI
-            document.getElementById('departParking').textContent = `${departParkingPercent}% full`;
-            document.getElementById('departParkingBar').style.width = `${departParkingPercent}%`;
+            // Display next departure
+            if (upcomingDepartures.length > 0) {
+                const next = upcomingDepartures[0];
+                document.getElementById('nextDeparture').textContent = next.timeStr;
+                
+                // Calculate countdown
+                let minutesUntil;
+                if (next.isNextDay) {
+                    minutesUntil = (1440 - currentMinutes) + next.minutes;
+                } else {
+                    minutesUntil = next.minutes - currentMinutes;
+                }
+                
+                if (minutesUntil > 60) {
+                    const hours = Math.floor(minutesUntil / 60);
+                    const mins = minutesUntil % 60;
+                    document.getElementById('countdown').textContent = `In ${hours}h ${mins}m`;
+                } else {
+                    document.getElementById('countdown').textContent = `In ${minutesUntil} minutes`;
+                }
+                
+                // Set a random vessel
+                const vesselIndex = Math.floor(Math.random() * VESSELS.length);
+                document.getElementById('vesselName').textContent = `M/V ${VESSELS[vesselIndex]} (typical)`;
+            }
             
-            document.getElementById('arriveParking').textContent = `${arriveParkingPercent}% full`;
-            document.getElementById('arriveParkingBar').style.width = `${arriveParkingPercent}%`;
-            
-            // Update terminal names based on direction
-            document.getElementById('departTerminalName').textContent = TERMINALS[fromTerminal].name;
-            document.getElementById('arriveTerminalName').textContent = TERMINALS[toTerminal].name;
-        }
-
-        // Display schedule list
-        function displayScheduleList(departures) {
+            // Display schedule list
             const scheduleList = document.getElementById('scheduleList');
             scheduleList.innerHTML = '';
             
-            departures.forEach((departure, index) => {
-                const departTime = new Date(departure.DepartingTime);
-                const timeString = departTime.toLocaleTimeString('en-US', {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true,
-                    timeZone: 'America/Los_Angeles'
-                });
-                
+            const departuresToShow = upcomingDepartures.slice(0, 5);
+            departuresToShow.forEach((departure, index) => {
                 const item = document.createElement('div');
                 item.className = 'schedule-item';
                 
-                let statusText = 'On Time';
-                if (index === 0) statusText = 'Next';
+                let status = 'Scheduled';
+                if (index === 0) status = 'Next';
+                if (departure.isNextDay) status = 'Tomorrow';
                 
                 item.innerHTML = `
-                    <div class="schedule-time">${timeString}</div>
-                    <div class="schedule-status">${statusText}</div>
+                    <div class="schedule-time">${departure.timeStr}</div>
+                    <div class="schedule-status">${status}</div>
                 `;
                 
                 scheduleList.appendChild(item);
             });
         }
 
-        // Load fallback schedule (when API is down)
-        function loadFallbackSchedule() {
-            const fallbackSchedule = {
-                'bainbridge-seattle': [
-                    '5:30 AM', '6:20 AM', '7:10 AM', '8:00 AM', '8:50 AM',
-                    '9:40 AM', '10:30 AM', '11:20 AM', '12:10 PM', '1:00 PM',
-                    '1:50 PM', '2:40 PM', '3:30 PM', '4:20 PM', '5:10 PM',
-                    '6:00 PM', '6:50 PM', '7:40 PM', '8:30 PM', '9:20 PM',
-                    '10:10 PM', '11:00 PM'
-                ],
-                'seattle-bainbridge': [
-                    '6:10 AM', '7:00 AM', '7:50 AM', '8:40 AM', '9:30 AM',
-                    '10:20 AM', '11:10 AM', '12:00 PM', '12:50 PM', '1:40 PM',
-                    '2:30 PM', '3:20 PM', '4:10 PM', '5:00 PM', '5:50 PM',
-                    '6:40 PM', '7:30 PM', '8:20 PM', '9:10 PM', '10:00 PM',
-                    '10:50 PM', '11:40 PM'
-                ]
-            };
-            
-            const schedule = fallbackSchedule[currentDirection];
+        // Update parking estimates based on time of day
+        function updateParkingEstimates() {
             const now = new Date();
-            const currentTime = now.getHours() * 60 + now.getMinutes();
+            const hour = now.getHours();
+            const dayOfWeek = now.getDay();
+            const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
             
-            // Find next departure
-            let nextDepartureTime = null;
-            for (const time of schedule) {
-                const [timeStr, period] = time.split(' ');
-                const [hours, minutes] = timeStr.split(':');
-                let hour = parseInt(hours);
-                if (period === 'PM' && hour !== 12) hour += 12;
-                if (period === 'AM' && hour === 12) hour = 0;
-                
-                const scheduleMinutes = hour * 60 + parseInt(minutes);
-                if (scheduleMinutes > currentTime) {
-                    nextDepartureTime = time;
-                    break;
+            let bainbridgeParking = 30;
+            let seattleParking = 40;
+            
+            if (isWeekday) {
+                // Morning rush (6-9 AM)
+                if (hour >= 6 && hour <= 9) {
+                    if (currentDirection === 'bainbridge-seattle') {
+                        bainbridgeParking = 85;
+                        seattleParking = 60;
+                    } else {
+                        bainbridgeParking = 40;
+                        seattleParking = 75;
+                    }
+                }
+                // Evening rush (4-7 PM)
+                else if (hour >= 16 && hour <= 19) {
+                    if (currentDirection === 'seattle-bainbridge') {
+                        seattleParking = 90;
+                        bainbridgeParking = 45;
+                    } else {
+                        seattleParking = 50;
+                        bainbridgeParking = 80;
+                    }
+                }
+                // Midday
+                else if (hour >= 10 && hour <= 15) {
+                    bainbridgeParking = 60;
+                    seattleParking = 55;
+                }
+            } else {
+                // Weekend patterns
+                if (hour >= 10 && hour <= 18) {
+                    bainbridgeParking = 70;
+                    seattleParking = 65;
                 }
             }
             
-            if (nextDepartureTime) {
-                document.getElementById('nextDeparture').textContent = nextDepartureTime;
-                document.getElementById('vesselName').textContent = 'Schedule mode';
+            // Update parking displays
+            if (currentDirection === 'bainbridge-seattle') {
+                document.getElementById('departParking').textContent = `~${bainbridgeParking}% full`;
+                document.getElementById('departParkingBar').style.width = `${bainbridgeParking}%`;
+                document.getElementById('arriveParking').textContent = `~${seattleParking}% full`;
+                document.getElementById('arriveParkingBar').style.width = `${seattleParking}%`;
             } else {
-                document.getElementById('nextDeparture').textContent = 'No more today';
-                document.getElementById('countdown').textContent = 'Service resumes tomorrow';
+                document.getElementById('departParking').textContent = `~${seattleParking}% full`;
+                document.getElementById('departParkingBar').style.width = `${seattleParking}%`;
+                document.getElementById('arriveParking').textContent = `~${bainbridgeParking}% full`;
+                document.getElementById('arriveParkingBar').style.width = `${bainbridgeParking}%`;
             }
             
-            // Show content
-            document.getElementById('loadingState').style.display = 'none';
-            document.getElementById('ferryContent').style.display = 'block';
-        }
-
-        // Set direction
-        function setDirection(direction) {
-            currentDirection = direction;
-            
-            // Update button states
-            const buttons = document.querySelectorAll('.direction-btn');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            // Reload data with new direction
-            loadFerryData();
+            // Update wait time estimate
+            const waitEstimate = Math.max(bainbridgeParking, seattleParking) > 80 ? '~25 min' : '~15 min';
+            document.getElementById('waitTime').textContent = waitEstimate;
         }
 
         // Update last updated time
@@ -888,19 +635,12 @@ function processScheduleData(data, fromTerminal, toTerminal) {
             const timeString = now.toLocaleTimeString('en-US', {
                 hour: 'numeric',
                 minute: '2-digit',
-                hour12: true,
-                timeZone: 'America/Los_Angeles'
+                hour12: true
             });
             document.getElementById('lastUpdated').textContent = timeString;
         }
 
-        // Show error message
-        function showError(message) {
-            document.getElementById('errorText').textContent = message;
-            document.getElementById('errorMessage').style.display = 'block';
-        }
-
-        // Start the app when page loads
+        // Start when page loads
         window.addEventListener('load', init);
     </script>
 </body>
