@@ -362,7 +362,13 @@
                     ← To Bainbridge
                 </button>
             </div>
-
+        <!-- Share Button -->
+<div style="margin-top: 15px; margin-bottom: 20px;">
+    <button onclick="shareFerry()" style="width: 100%; padding: 12px; background: white; border: 2px solid #667eea; border-radius: 8px; color: #667eea; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <span>Share My Ferry</span>
+        <span style="font-size: 16px;">📤</span>
+    </button>
+</div>
             <div id="loadingState" class="loading">
                 <div class="loading-spinner"></div>
                 <p>Loading real-time ferry data...</p>
@@ -1026,6 +1032,77 @@ function refreshCamera() {
     setTimeout(() => {
         img.style.opacity = '1';
     }, 500);
+}
+
+        function shareFerry() {
+    // Get the next departure time
+    const nextDepartureEl = document.getElementById('nextDeparture');
+    const vesselEl = document.getElementById('vesselName');
+    const countdownEl = document.getElementById('countdown');
+    
+    if (!nextDepartureEl) return;
+    
+    const departureTime = nextDepartureEl.textContent;
+    const vessel = vesselEl.textContent.replace('M/V ', '');
+    const countdown = countdownEl.textContent;
+    
+    // Determine route direction
+    const route = currentDirection === 'bainbridge-seattle' 
+        ? 'Bainbridge to Seattle' 
+        : 'Seattle to Bainbridge';
+    
+    // Create share text
+    const shareText = `Taking the ${departureTime} ferry (${route}) on the ${vessel}. ${countdown}`;
+    
+    // Check if Web Share API is available (works on mobile and some desktop browsers)
+    if (navigator.share) {
+        navigator.share({
+            title: 'Ferry Update',
+            text: shareText,
+            url: 'https://bainbridge-ferry-tracker.vercel.app'
+        }).catch(err => {
+            // User cancelled share, that's fine
+            if (err.name !== 'AbortError') {
+                fallbackShare(shareText);
+            }
+        });
+    } else {
+        // Fallback for browsers without Web Share API
+        fallbackShare(shareText);
+    }
+}
+
+function fallbackShare(text) {
+    // Copy to clipboard as fallback
+    const fullText = text + '\n\nCheck schedule: https://bainbridge-ferry-tracker.vercel.app';
+    
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(fullText).then(() => {
+            // Show temporary success message
+            const btn = event.target.closest('button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span>Copied to clipboard! 📋</span>';
+            btn.style.background = '#34c759';
+            btn.style.color = 'white';
+            btn.style.borderColor = '#34c759';
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = 'white';
+                btn.style.color = '#667eea';
+                btn.style.borderColor = '#667eea';
+            }, 2000);
+        });
+    } else {
+        // Last resort: create a text area to copy from
+        const textarea = document.createElement('textarea');
+        textarea.value = fullText;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        alert('Ferry info copied to clipboard!');
+    }
 }
     </script>
 </body>
