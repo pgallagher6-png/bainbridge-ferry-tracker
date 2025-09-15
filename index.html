@@ -847,58 +847,69 @@
             alertBanner.classList.add('active', 'error');
         }
 
-        // Fallback schedule (when API is unavailable)
-        function loadFallbackSchedule() {
-            const schedules = {
-                'bainbridge-seattle': [
-                    '5:30 AM', '6:20 AM', '7:10 AM', '8:00 AM', '8:50 AM',
-                    '9:40 AM', '10:30 AM', '11:20 AM', '12:10 PM', '1:00 PM',
-                    '1:50 PM', '2:40 PM', '3:30 PM', '4:20 PM', '5:10 PM',
-                    '6:00 PM', '6:50 PM', '7:40 PM', '8:30 PM', '9:20 PM',
-                    '10:10 PM', '11:00 PM', '11:50 PM'
-                ],
-                'seattle-bainbridge': [
-                    '6:10 AM', '7:00 AM', '7:50 AM', '8:40 AM', '9:30 AM',
-                    '10:20 AM', '11:10 AM', '12:00 PM', '12:50 PM', '1:40 PM',
-                    '2:30 PM', '3:20 PM', '4:10 PM', '5:00 PM', '5:50 PM',
-                    '6:40 PM', '7:30 PM', '8:20 PM', '9:10 PM', '10:00 PM',
-                    '10:50 PM', '11:40 PM'
-                ]
-            };
+// Fallback schedule (when API is unavailable)
+function loadFallbackSchedule() {
+    const schedules = {
+        'bainbridge-seattle': [
+            '5:30 AM', '6:20 AM', '7:10 AM', '8:00 AM', '8:50 AM',
+            '9:40 AM', '10:30 AM', '11:20 AM', '12:10 PM', '1:00 PM',
+            '1:50 PM', '2:40 PM', '3:30 PM', '4:20 PM', '5:10 PM',
+            '6:00 PM', '6:50 PM', '7:40 PM', '8:30 PM', '9:20 PM',
+            '10:10 PM', '11:00 PM', '11:50 PM'
+        ],
+        'seattle-bainbridge': [
+            '6:10 AM', '7:00 AM', '7:50 AM', '8:40 AM', '9:30 AM',
+            '10:20 AM', '11:10 AM', '12:00 PM', '12:50 PM', '1:40 PM',
+            '2:30 PM', '3:20 PM', '4:10 PM', '5:00 PM', '5:50 PM',
+            '6:40 PM', '7:30 PM', '8:20 PM', '9:10 PM', '10:00 PM',
+            '10:50 PM', '11:40 PM'
+        ]
+    };
 
-            const schedule = schedules[currentDirection];
-            const now = new Date();
-            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const schedule = schedules[currentDirection];
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    
+    // Find next departure
+    for (const timeStr of schedule) {
+        const [time, period] = timeStr.split(' ');
+        const [hours, minutes] = time.split(':');
+        let hour = parseInt(hours);
+        if (period === 'PM' && hour !== 12) hour += 12;
+        if (period === 'AM' && hour === 12) hour = 0;
+        
+        const departureMinutes = hour * 60 + parseInt(minutes);
+        
+        if (departureMinutes > currentMinutes) {
+            document.getElementById('nextDeparture').textContent = timeStr;
             
-            // Find next departure
-            for (const timeStr of schedule) {
-                const [time, period] = timeStr.split(' ');
-                const [hours, minutes] = time.split(':');
-                let hour = parseInt(hours);
-                if (period === 'PM' && hour !== 12) hour += 12;
-                if (period === 'AM' && hour === 12) hour = 0;
-                
-                const departureMinutes = hour * 60 + parseInt(minutes);
-                
-                if (departureMinutes > currentMinutes) {
-                    document.getElementById('nextDeparture').textContent = timeStr;
-                    
-                    const minutesUntil = departureMinutes - currentMinutes;
-                    if (minutesUntil > 60) {
-                        const h = Math.floor(minutesUntil / 60);
-                        const m = minutesUntil % 60;
-                        document.getElementById('countdown').textContent = `In ${h}h ${m}m`;
-                    } else {
-                        document.getElementById('countdown').textContent = `In ${minutesUntil} minutes`;
-                    }
-                    
-                    break;
-                }
+            const minutesUntil = departureMinutes - currentMinutes;
+            if (minutesUntil > 60) {
+                const h = Math.floor(minutesUntil / 60);
+                const m = minutesUntil % 60;
+                document.getElementById('countdown').textContent = `In ${h}h ${m}m`;
+            } else {
+                document.getElementById('countdown').textContent = `In ${minutesUntil} minutes`;
             }
+            
+            break;
+        }
     }
-            // Camera functionality
+    
+    // Update other fields with defaults
+    document.getElementById('ferryStatus').textContent = 'Schedule Mode';
+    document.getElementById('vesselName').textContent = 'See schedule';
+    document.getElementById('spaceAvailable').textContent = 'Normal';
+    document.getElementById('waitTime').textContent = '~15 min';
+    document.getElementById('onTimeStatus').textContent = 'On Schedule';
+    
+    // Show content
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('ferryContent').style.display = 'block';
+}  // THIS CLOSING BRACE WAS IN THE WRONG PLACE
+
+// Camera functionality - THESE SHOULD BE OUTSIDE loadFallbackSchedule
 let cameraVisible = false;
-let cameraInterval;
 
 function toggleCamera() {
     cameraVisible = !cameraVisible;
@@ -929,73 +940,7 @@ function toggleCamera() {
     }
 }
 
-function updateCameraImage() {
-    let cameraUrl, locationText;
-    
-    if (currentDirection === 'bainbridge-seattle') {
-        cameraUrl = 'https://images.wsdot.wa.gov/nw/003vc00232.jpg';
-        locationText = 'Bainbridge Terminal - Holding Lot';
-    } else {
-        cameraUrl = 'https://images.wsdot.wa.gov/nw/001vc00070.jpg';
-        locationText = 'Seattle Terminal - Colman Dock';
-    }
-    
-    const img = document.getElementById('terminalCamera');
-    
-    // Create new image to test loading
-    const testImg = new Image();
-    testImg.onload = function() {
-        // Image loaded successfully
-        img.src = this.src;
-        img.style.display = 'block';
-    };
-    testImg.onerror = function() {
-        // If direct loading fails, try opening in new tab
-        img.style.display = 'none';
-        document.getElementById('cameraLocation').innerHTML = 
-            `${locationText} - <a href="${cameraUrl}" target="_blank" style="color: #667eea;">Open Camera in New Tab</a>`;
-    };
-    
-    // Add timestamp and try to load
-    testImg.src = cameraUrl + '?t=' + Date.now();
-    document.getElementById('cameraLocation').textContent = locationText;
-}
-
-function refreshCamera() {
-    updateCameraImage();
-    // Visual feedback
-    const img = document.getElementById('terminalCamera');
-    img.style.opacity = '0.5';
-    setTimeout(() => {
-        img.style.opacity = '1';
-    }, 500);
-}
-
-// Clean up interval when page unloads
-window.addEventListener('beforeunload', () => {
-    if (cameraInterval) {
-        clearInterval(cameraInterval);
-    }
-});
-            // Update other fields with defaults
-            document.getElementById('ferryStatus').textContent = 'Schedule Mode';
-            document.getElementById('vesselName').textContent = 'See schedule';
-            document.getElementById('spaceAvailable').textContent = 'Normal';
-            document.getElementById('waitTime').textContent = '~15 min';
-            document.getElementById('onTimeStatus').textContent = 'On Schedule';
-            
-            // Show content
-            document.getElementById('loadingState').style.display = 'none';
-            document.getElementById('ferryContent').style.display = 'block';
-        }
-
-        // Start the app when page loads
-        window.addEventListener('load', init);
-        // Camera functionality
-let cameraVisible = false;
-let cameraInterval;
-
-        function shareFerry() {
+function shareFerry() {
     // Get the next departure time
     const nextDepartureEl = document.getElementById('nextDeparture');
     const vesselEl = document.getElementById('vesselName');
@@ -1015,20 +960,18 @@ let cameraInterval;
     // Create share text
     const shareText = `Taking the ${departureTime} ferry (${route}) on the ${vessel}. ${countdown}`;
     
-    // Check if Web Share API is available (works on mobile and some desktop browsers)
+    // Check if Web Share API is available
     if (navigator.share) {
         navigator.share({
             title: 'Ferry Update',
             text: shareText,
             url: 'https://bainbridge-ferry-tracker.vercel.app'
         }).catch(err => {
-            // User cancelled share, that's fine
             if (err.name !== 'AbortError') {
                 fallbackShare(shareText);
             }
         });
     } else {
-        // Fallback for browsers without Web Share API
         fallbackShare(shareText);
     }
 }
@@ -1065,6 +1008,9 @@ function fallbackShare(text) {
         alert('Ferry info copied to clipboard!');
     }
 }
+
+// Start the app when page loads
+window.addEventListener('load', init);
     </script>
 </body>
 </html>
