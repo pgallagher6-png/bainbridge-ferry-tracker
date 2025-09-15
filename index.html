@@ -681,43 +681,54 @@
 
         // Update terminal status
         function updateTerminalStatus(terminals) {
-    if (!terminals || terminals.length === 0) {
-        document.getElementById('spaceAvailable').textContent = 'Check Terminal';
-        document.getElementById('waitTime').textContent = '< 15 min';
-        return;
-    }
-
-    // Get the departing terminal based on direction
-    const departingTerminalId = currentDirection === 'bainbridge-seattle' ? 3 : 7;
-    const terminal = terminals.find(t => t.TerminalID === departingTerminalId);
+    const now = new Date();
+    const hour = now.getHours();
+    const day = now.getDay();
+    const isWeekday = day >= 1 && day <= 5;
     
-    if (terminal && terminal.WaitTimes && terminal.WaitTimes.length > 0) {
-        // Find wait time for route 5 specifically
-        const routeWait = terminal.WaitTimes.find(w => w.RouteID === 5) || terminal.WaitTimes[0];
-        
-        // Update wait time
-        if (routeWait.WaitTimeMinutes !== undefined && routeWait.WaitTimeMinutes !== null) {
-            document.getElementById('waitTime').textContent = `${routeWait.WaitTimeMinutes} min`;
+    let spaceEstimate = "Good";
+    let spaceClass = "good";
+    let waitEstimate = "20 min";
+    
+    if (currentDirection === 'bainbridge-seattle') {
+        // Bainbridge to Seattle
+        if (isWeekday && hour >= 5 && hour <= 9) {
+            // Morning rush per WSDOT: "45 to 60 minute advance arrival suggested, through the 8:45 AM sailing"
+            spaceEstimate = hour < 7 ? "Filling Fast" : "Very Limited";
+            spaceClass = hour < 7 ? "warning" : "alert";
+            waitEstimate = "45-60 min";
         } else {
-            document.getElementById('waitTime').textContent = '< 15 min';
+            spaceEstimate = "Good";
+            spaceClass = "good";
+            waitEstimate = "20 min";
         }
-        
-        // Update space available
-        if (routeWait.SpacesAvailable !== undefined && routeWait.SpacesAvailable !== null) {
-            document.getElementById('spaceAvailable').textContent = `${routeWait.SpacesAvailable} spaces`;
-            
-            const spaceElement = document.getElementById('spaceAvailable');
-            if (routeWait.SpacesAvailable > 50) {
-                spaceElement.className = 'status-value good';
-            } else if (routeWait.SpacesAvailable > 20) {
-                spaceElement.className = 'status-value warning';
-            } else {
-                spaceElement.className = 'status-value alert';
-            }
+    } else {
+        // Seattle to Bainbridge
+        if (isWeekday && hour >= 15 && hour <= 19) {
+            // Evening rush per WSDOT: "Peak commute hours 3:00 PM through 7:30 PM"
+            spaceEstimate = hour < 17 ? "Filling" : "Very Limited";
+            spaceClass = hour < 17 ? "warning" : "alert";
+            waitEstimate = "30-60 min";
+        } else if (!isWeekday && hour >= 10 && hour <= 16) {
+            // Weekend midday
+            spaceEstimate = "Moderate";
+            spaceClass = "warning";
+            waitEstimate = "20-30 min";
         } else {
-            document.getElementById('spaceAvailable').textContent = 'Check Terminal';
-            document.getElementById('spaceAvailable').className = 'status-value';
+            spaceEstimate = "Good";
+            spaceClass = "good";
+            waitEstimate = "20 min";
         }
+    }
+    
+    // Update UI
+    document.getElementById('spaceAvailable').textContent = spaceEstimate;
+    document.getElementById('spaceAvailable').className = `status-value ${spaceClass}`;
+    document.getElementById('waitTime').textContent = waitEstimate;
+    
+    // Add helpful context during peak times
+    if (spaceClass === 'alert') {
+        document.getElementById('waitTime').title = 'WSDOT recommends arriving 45-60 min early';
     }
 }
 
