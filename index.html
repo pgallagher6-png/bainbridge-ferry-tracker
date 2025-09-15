@@ -413,12 +413,30 @@
                     </div>
                 </div>
 
-                <div class="camera-preview" id="cameraPreview">
-                    <img id="cameraImage" src="" alt="Terminal camera view">
-                    <div class="camera-label" id="cameraLabel">Terminal Camera</div>
-                </div>
+               <!-- Camera Section -->
+<div style="margin-top: 25px; padding-top: 25px; border-top: 1px solid #f0f0f0;">
+    <button onclick="toggleCamera()" style="width: 100%; padding: 15px; background: #f5f5f7; border: none; border-radius: 12px; font-weight: 600; color: #333; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <span id="cameraButtonText">View Parking Lot</span>
+        <span style="font-size: 18px;">📷</span>
+    </button>
+    
+    <div id="cameraView" style="display: none; margin-top: 15px;">
+        <div style="background: #f9f9fb; border-radius: 12px; padding: 15px;">
+            <img id="terminalCamera" src="" alt="Terminal parking lot" style="width: 100%; border-radius: 8px; display: block;">
+            <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #666; font-size: 12px;">
+                    <span id="cameraLocation">Loading...</span>
+                </span>
+                <button onclick="refreshCamera()" style="padding: 6px 12px; background: white; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 12px; color: #666; cursor: pointer;">
+                    Refresh
+                </button>
             </div>
+            <p style="color: #999; font-size: 11px; margin-top: 8px; text-align: center;">
+                Updates automatically every 30 seconds
+            </p>
         </div>
+    </div>
+</div>
 
         <div class="footer-info">
             Real-time data from Washington State Ferries<br>
@@ -843,7 +861,71 @@
                     break;
                 }
             }
-            
+            // Camera functionality
+let cameraVisible = false;
+let cameraInterval;
+
+function toggleCamera() {
+    cameraVisible = !cameraVisible;
+    const cameraView = document.getElementById('cameraView');
+    const buttonText = document.getElementById('cameraButtonText');
+    
+    if (cameraVisible) {
+        cameraView.style.display = 'block';
+        buttonText.textContent = 'Hide Parking Lot';
+        updateCameraImage();
+        // Refresh every 30 seconds
+        cameraInterval = setInterval(updateCameraImage, 30000);
+    } else {
+        cameraView.style.display = 'none';
+        buttonText.textContent = 'View Parking Lot';
+        clearInterval(cameraInterval);
+    }
+}
+
+function updateCameraImage() {
+    let cameraUrl, locationText;
+    
+    if (currentDirection === 'bainbridge-seattle') {
+        // Bainbridge terminal cameras
+        cameraUrl = 'https://images.wsdot.wa.gov/nw/003vc00232.jpg';
+        locationText = 'Bainbridge Terminal - Holding Lot';
+    } else {
+        // Seattle terminal camera
+        cameraUrl = 'https://images.wsdot.wa.gov/nw/001vc00070.jpg';
+        locationText = 'Seattle Terminal - Colman Dock';
+    }
+    
+    // Add timestamp to prevent caching
+    const img = document.getElementById('terminalCamera');
+    img.src = cameraUrl + '?t=' + Date.now();
+    document.getElementById('cameraLocation').textContent = locationText;
+    
+    // Update timestamp
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
+}
+
+function refreshCamera() {
+    updateCameraImage();
+    // Visual feedback
+    const img = document.getElementById('terminalCamera');
+    img.style.opacity = '0.5';
+    setTimeout(() => {
+        img.style.opacity = '1';
+    }, 500);
+}
+
+// Clean up interval when page unloads
+window.addEventListener('beforeunload', () => {
+    if (cameraInterval) {
+        clearInterval(cameraInterval);
+    }
+});
             // Update other fields with defaults
             document.getElementById('ferryStatus').textContent = 'Schedule Mode';
             document.getElementById('vesselName').textContent = 'See schedule';
