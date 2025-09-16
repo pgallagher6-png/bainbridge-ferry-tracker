@@ -637,8 +637,7 @@
         function updateCountdown() {
             if (!window.nextDepartureTime) return;
             
-            const now = new Date();
-            const pacificNow = new Date(now.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
+            const now = new Date(); // Your browser already handles timezone
             const diff = window.nextDepartureTime - pacificNow;
             
             if (diff <= 0) {
