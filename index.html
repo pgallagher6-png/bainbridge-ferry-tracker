@@ -569,9 +569,12 @@
                 document.getElementById('arriveTerminalStatus').textContent = 'Terminal Open';
             }
 
-            // Get current Pacific time
+            // Get current Pacific time more reliably
             const now = new Date();
-            const pacificNow = new Date(now.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
+            // Force Pacific time by adjusting for timezone offset
+            const pacificOffset = 7; // PST is UTC-7 (or UTC-8 in winter)
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const pacificNow = new Date(utc - (3600000 * pacificOffset));
             
             // Find upcoming sailings
             const upcoming = sailings.filter(sailing => {
