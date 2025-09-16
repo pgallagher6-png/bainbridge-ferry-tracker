@@ -570,11 +570,7 @@
             }
 
             // Get current Pacific time more reliably
-            const now = new Date();
-            // Force Pacific time by adjusting for timezone offset
-            const pacificOffset = 7; // PST is UTC-7 (or UTC-8 in winter)
-            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-            const pacificNow = new Date(utc - (3600000 * pacificOffset));
+            const pacificNow = new Date(); // This works if your device is in Pacific time
             
             // Find upcoming sailings
             const upcoming = sailings.filter(sailing => {
