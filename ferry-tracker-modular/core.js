@@ -44,34 +44,71 @@ export class FerryTracker {
         }
     }
 
-    displaySchedule(data) {
-        if (!data || !data.schedules) {
-            this.loadFallbackSchedule();
-            return;
-        }
+displaySchedule(data) {
+    if (!data || !data.schedules) {
+        this.loadFallbackSchedule();
+        return;
+    }
 
-        const direction = this.currentDirection === 'bainbridge-seattle' ? 'toSeattle' : 'toBainbridge';
-        const sailings = data.schedules[direction] || [];
+    const direction = this.currentDirection === 'bainbridge-seattle' ? 'toSeattle' : 'toBainbridge';
+    const sailings = data.schedules[direction] || [];
+    
+    if (!sailings || sailings.length === 0) {
+        this.loadFallbackSchedule();
+        return;
+    }
+
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    
+    // Separate AM and PM sailings
+    const amSailings = [];
+    const pmSailings = [];
+    
+    sailings.forEach(sailing => {
+        const sailTime = new Date(sailing.depart);
+        const sailHour = sailTime.getHours();
         
-        // Filter upcoming sailings
-        const now = new Date();
-        const upcoming = sailings
-            .filter(sailing => new Date(sailing.depart) > now)
-            .slice(0, 5);
-
-        if (upcoming.length === 0) {
-            updateElement('nextDeparture', 'No more today');
-            updateElement('countdown', 'Service resumes tomorrow');
-            updateElement('vesselName', 'See schedule');
-            return;
+        if (sailHour < 12) {
+            amSailings.push(sailing);
+        } else {
+            pmSailings.push(sailing);
         }
+    });
+    
+    // Get upcoming PM sailings first
+    let upcoming = pmSailings.filter(sailing => new Date(sailing.depart) > now);
+    
+    // If no PM sailings left (or it's early morning), add tomorrow's AM sailings
+    if (upcoming.length === 0 || currentHour < 4) {
+        amSailings.forEach(sailing => {
+            const sailTime = new Date(sailing.depart);
+            // These AM times must be tomorrow
+            sailTime.setDate(sailTime.getDate() + 1);
+            sailing.depart = sailTime.toISOString();
+            upcoming.push(sailing);
+        });
+    }
+    
+    // Limit to 5 and sort by time
+    upcoming = upcoming
+        .sort((a, b) => new Date(a.depart) - new Date(b.depart))
+        .slice(0, 5);
 
-        // Display next departure
-        const next = upcoming[0];
-        this.nextDepartureTime = new Date(next.depart);
-        
-        updateElement('nextDeparture', formatTime(this.nextDepartureTime));
-        updateElement('vesselName', next.vesselName ? `M/V ${next.vesselName}` : 'Vessel TBD');
+    if (upcoming.length === 0) {
+        document.getElementById('nextDeparture').textContent = 'No more today';
+        document.getElementById('countdown').textContent = 'Service resumes tomorrow';
+        document.getElementById('vesselName').textContent = 'See schedule';
+        return;
+    }
+
+    // Display next departure
+    const next = upcoming[0];
+    this.nextDepartureTime = new Date(next.depart);
+    
+    updateElement('nextDeparture', formatTime(this.nextDepartureTime));
+    updateElement('vesselName', next.vesselName ? `M/V ${next.vesselName}` : 'Vessel TBD');
         
         // Display schedule list
         const scheduleList = document.getElementById('scheduleList');
@@ -123,31 +160,58 @@ export class FerryTracker {
     }
 
     updateTerminalStatus() {
-        const now = new Date();
-        const hour = now.getHours();
-        const day = now.getDay();
-        const isWeekday = day >= 1 && day <= 5;
-        
-        let spaceEstimate = "Good";
-        let waitEstimate = "20 min";
-        
-        if (this.currentDirection === 'bainbridge-seattle') {
-            if (isWeekday && hour >= 6 && hour <= 9) {
-                spaceEstimate = "Limited";
-                waitEstimate = "45-60 min";
-            }
-        } else {
-            if (isWeekday && hour >= 15 && hour <= 19) {
-                spaceEstimate = "Limited";
-                waitEstimate = "30-60 min";
+    const now = new Date();
+    const hour = now.getHours();
+    const day = now.getDay();
+    const isWeekday = day >= 1 && day <= 5;
+    
+    let spaceEstimate = "Good";
+    let spaceClass = "good";  // CSS class for color
+    let waitEstimate = "20 min";
+    
+    if (this.currentDirection === 'bainbridge-seattle') {
+        if (isWeekday && hour >= 6 && hour <= 9) {
+            spaceEstimate = "Limited";
+            spaceClass = "warning";  // Orange
+            waitEstimate = "45-60 min";
+        }
+    } else {
+        if (isWeekday && hour >= 15 && hour <= 19) {
+            spaceEstimate = "Limited";
+            spaceClass = "warning";  // Orange
+            waitEstimate = "30-60 min";
+        }
+    }
+    
+    // Update elements WITH color classes
+    const spaceElement = document.getElementById('spaceAvailable');
+    if (spaceElement) {
+        spaceElement.textContent = spaceEstimate;
+        spaceElement.className = `status-value ${spaceClass}`;
+    }
+    
+    updateElement('waitTime', waitEstimate);
+    
+    // Update ferry status with appropriate color
+    const statusElement = document.getElementById('ferryStatus');
+    if (statusElement) {
+        if (this.nextDepartureTime) {
+            const minutesUntil = Math.floor((this.nextDepartureTime - now) / 60000);
+            if (minutesUntil <= 5) {
+                statusElement.textContent = 'Boarding Now';
+                statusElement.className = 'status-value alert';  // Red
+            } else if (minutesUntil <= 20) {
+                statusElement.textContent = 'Boarding Soon';
+                statusElement.className = 'status-value warning';  // Orange
+            } else {
+                statusElement.textContent = 'On Schedule';
+                statusElement.className = 'status-value good';  // Green
             }
         }
-        
-        updateElement('spaceAvailable', spaceEstimate);
-        updateElement('waitTime', waitEstimate);
-        updateElement('ferryStatus', 'On Schedule');
-        updateElement('onTimeStatus', 'On Time');
     }
+    
+    updateElement('onTimeStatus', 'On Time');
+}
 
     setDirection(direction, button) {
         // Clear intervals
