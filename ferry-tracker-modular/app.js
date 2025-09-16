@@ -55,29 +55,33 @@ function setupGlobalFunctions() {
         const nextDepartureEl = document.getElementById('nextDeparture');
         const vesselEl = document.getElementById('vesselName');
         const countdownEl = document.getElementById('countdown');
-        
+    
         if (!nextDepartureEl) return;
-        
+    
         const departureTime = nextDepartureEl.textContent;
         const vessel = vesselEl.textContent.replace('M/V ', '');
         const countdown = countdownEl.textContent;
-        
+    
         const route = window.ferryTracker.currentDirection === 'bainbridge-seattle' 
             ? 'Bainbridge to Seattle' 
             : 'Seattle to Bainbridge';
-        
+    
         const shareText = `Taking the ${departureTime} ferry (${route}) on the ${vessel}. ${countdown}`;
-        
+    
+    // Try native share first (mobile)
         if (navigator.share) {
             navigator.share({
-                title: 'Ferry Update',
-                text: shareText,
-                url: window.location.href
-            });
-        } else {
+            title: 'Ferry Update',
+            text: shareText,
+            url: window.location.origin
+        }).catch(err => {
+            // User cancelled, do nothing
+        });
+   } else {
             alert(shareText);
         }
     };
 }
 
 console.log('Ferry Tracker app loaded');
+
