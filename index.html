@@ -574,8 +574,9 @@
             
             // Find upcoming sailings
             const upcoming = sailings.filter(sailing => {
-                const departTime = new Date(sailing.depart);
-                return departTime > pacificNow;
+            const departTime = new Date(sailing.depart); // This is already in local time
+            const now = new Date(); // Current local time
+            return departTime > now;
             }).slice(0, 5);
 
             if (upcoming.length === 0) {
