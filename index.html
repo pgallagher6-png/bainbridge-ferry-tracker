@@ -570,7 +570,7 @@
             }
 
             // Get current Pacific time more reliably
-            const pacificNow = new Date(); // This works if your device is in Pacific time
+            const now = new Date();
             
             // Find upcoming sailings
             const upcoming = sailings.filter(sailing => {
