@@ -870,10 +870,10 @@ function loadFallbackSchedule() {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     
 // Find next departure
-const currentTime = new Date();
-const pacificNow = new Date(currentTime.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
-const currentHours = pacificNow.getHours();
-const currentMinutes = currentHours * 60 + pacificNow.getMinutes();
+const timeNow = new Date();
+const pacificTimeNow = new Date(timeNow.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
+const nowHours = pacificTimeNow.getHours();
+const nowMinutes = nowHours * 60 + pacificTimeNow.getMinutes();
 
 let nextTime = null;
 
@@ -886,11 +886,11 @@ for (const timeStr of schedule) {
     if (period === 'AM' && hours === 12) hour24 = 0;
     
     // Create a Date object for this departure time
-    const departureTime = new Date(pacificNow);
+    const departureTime = new Date(pacificTimeNow);
     departureTime.setHours(hour24, minutes, 0, 0);
     
     // If this time has passed today, skip it
-    if (departureTime > pacificNow) {
+    if (departureTime > pacificTimeNow) {
         nextTime = departureTime;
         
         // Store for countdown timer
@@ -900,7 +900,7 @@ for (const timeStr of schedule) {
         document.getElementById('nextDeparture').textContent = timeStr;
         
         // Calculate and display countdown
-        const minutesUntil = Math.floor((nextTime - pacificNow) / 60000);
+        const minutesUntil = Math.floor((nextTime - pacificTimeNow) / 60000);
         if (minutesUntil > 60) {
             const h = Math.floor(minutesUntil / 60);
             const m = minutesUntil % 60;
@@ -922,7 +922,7 @@ if (!nextTime && schedule.length > 0) {
     if (period === 'PM' && hours !== 12) hour24 += 12;
     if (period === 'AM' && hours === 12) hour24 = 0;
     
-    nextTime = new Date(pacificNow);
+    nextTime = new Date(pacificTimeNow);
     nextTime.setDate(nextTime.getDate() + 1); // Tomorrow
     nextTime.setHours(hour24, minutes, 0, 0);
     
