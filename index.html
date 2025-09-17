@@ -867,60 +867,64 @@ function loadFallbackSchedule() {
 
     const schedule = schedules[currentDirection];
     const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
     
-// Find next departure
-const currentDateTime = new Date();
-let nextTime = null;
-let nextFerry = null;
-
-// Schedule should be an array of objects with depart timestamps
-for (const sailing of schedule) {
-    const departureTime = new Date(sailing.depart);
-    
-    // If this departure is in the future
-    if (departureTime > currentDateTime) {
-        nextTime = departureTime;
-        nextFerry = sailing;
-        break;
-    }
-}
-
-if (nextFerry) {
-    // Store for countdown timer
-    window.nextDepartureTime = nextTime;
-    
-    // Display the time in local format
-    document.getElementById('nextDeparture').textContent = nextTime.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-        timeZone: 'America/Los_Angeles'
+    // Convert string times to today's date objects
+    const todaySchedule = schedule.map(timeStr => {
+        const [time, period] = timeStr.split(' ');
+        const [hours, minutes] = time.split(':').map(Number);
+        
+        let hour24 = hours;
+        if (period === 'PM' && hours !== 12) hour24 += 12;
+        if (period === 'AM' && hours === 12) hour24 = 0;
+        
+        const scheduleTime = new Date();
+        scheduleTime.setHours(hour24, minutes, 0, 0);
+        
+        return {
+            timeStr: timeStr,
+            dateObj: scheduleTime
+        };
     });
     
-    // Display vessel name if available
-    if (nextFerry.vesselName) {
-        const vesselElement = document.getElementById('vesselName');
-        if (vesselElement) {
-            vesselElement.textContent = nextFerry.vesselName;
+    // Find next departure
+    let nextFerry = null;
+    for (const item of todaySchedule) {
+        if (item.dateObj > now) {
+            nextFerry = item;
+            break;
         }
     }
     
-    // Calculate and display countdown
-    const minutesUntil = Math.floor((nextTime - currentDateTime) / 60000);
-    if (minutesUntil > 60) {
-        const h = Math.floor(minutesUntil / 60);
-        const m = minutesUntil % 60;
-        document.getElementById('countdown').textContent = `In ${h}h ${m}m`;
+    if (nextFerry) {
+        window.nextDepartureTime = nextFerry.dateObj;
+        document.getElementById('nextDeparture').textContent = nextFerry.timeStr;
+        
+        const minutesUntil = Math.floor((nextFerry.dateObj - now) / 60000);
+        if (minutesUntil > 60) {
+            const h = Math.floor(minutesUntil / 60);
+            const m = minutesUntil % 60;
+            document.getElementById('countdown').textContent = `In ${h}h ${m}m`;
+        } else {
+            document.getElementById('countdown').textContent = `In ${minutesUntil} minutes`;
+        }
+        
+        document.getElementById('vesselName').textContent = 'Schedule Mode';
     } else {
-        document.getElementById('countdown').textContent = `In ${minutesUntil} minutes`;
+        document.getElementById('nextDeparture').textContent = 'No more today';
+        document.getElementById('countdown').textContent = 'Service resumes tomorrow';
+        document.getElementById('vesselName').textContent = 'See schedule';
+        window.nextDepartureTime = null;
     }
-} else {
-    // No more ferries today
-    document.getElementById('nextDeparture').textContent = 'No more today';
-    document.getElementById('countdown').textContent = 'See full schedule';
-    window.nextDepartureTime = null;
-}  // THIS CLOSING BRACE WAS IN THE WRONG PLACE
+    
+    // Update other fields with defaults
+    document.getElementById('ferryStatus').textContent = 'Schedule Mode';
+    document.getElementById('spaceAvailable').textContent = 'Normal';
+    document.getElementById('waitTime').textContent = '~15 min';
+    document.getElementById('onTimeStatus').textContent = 'On Schedule';
+    
+    // Show content
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('ferryContent').style.display = 'block';
 }
         
 // Camera functionality - THESE SHOULD BE OUTSIDE loadFallbackSchedule
