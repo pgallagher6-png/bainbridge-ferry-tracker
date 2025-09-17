@@ -471,22 +471,26 @@ async function loadFerryData() {
     try {
         console.log('Loading ferry data from:', API_URL);
         
-        // Get today's date in PACIFIC timezone, not UTC
+        // Get the "ferry service day" - ferries from 4:45 AM to 12:55 AM belong to the same day
         const now = new Date();
-        const pacificDateStr = now.toLocaleDateString('en-US', {
-            timeZone: 'America/Los_Angeles',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
+        const pacificNow = new Date(now.toLocaleString('en-US', {timeZone: 'America/Los_Angeles'}));
+        const currentHour = pacificNow.getHours();
         
-        // Convert MM/DD/YYYY to YYYY-MM-DD
-        const [month, day, year] = pacificDateStr.split('/');
-        const today = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        // If it's between midnight and 4:45 AM, we want yesterday's schedule
+        // (since those ferries are part of the previous day's service)
+        let scheduleDate = new Date(pacificNow);
+        if (currentHour < 5) {  // Before 5 AM, use yesterday's schedule
+            scheduleDate.setDate(scheduleDate.getDate() - 1);
+        }
         
-        console.log('Current Pacific time:', now.toLocaleString('en-US', {timeZone: 'America/Los_Angeles'}));
-        console.log('Current UTC time:', now.toISOString());
-        console.log('Pacific date being requested:', today);
+        // Format the date as YYYY-MM-DD
+        const year = scheduleDate.getFullYear();
+        const month = String(scheduleDate.getMonth() + 1).padStart(2, '0');
+        const day = String(scheduleDate.getDate()).padStart(2, '0');
+        const today = `${year}-${month}-${day}`;
+        
+        console.log('Current Pacific time:', pacificNow.toLocaleString());
+        console.log('Ferry schedule date requested:', today);
         
         // Fetch all data endpoints
         const [scheduleRes, vesselsRes, terminalsRes, alertsRes] = await Promise.all([
