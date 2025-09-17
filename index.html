@@ -612,13 +612,43 @@ function displaySchedule(data) {
             return departTime > now;
             }).slice(0, 5);
 
-            if (upcoming.length === 0) {
-                // No more sailings today
-                document.getElementById('nextDeparture').textContent = 'No more today';
-                document.getElementById('countdown').textContent = 'Service resumes tomorrow';
-                document.getElementById('vesselName').textContent = 'See schedule';
-                return;
-            }
+if (upcoming.length === 0) {
+    // No more sailings in this schedule - but check if we should load tomorrow's
+    const currentHour = now.getHours();
+    
+    if (currentHour >= 1 && currentHour < 5) {
+        // It's the dead zone (1 AM - 5 AM), we need tomorrow's schedule
+        console.log('In overnight gap, loading next day schedule...');
+        
+        // Load tomorrow's schedule
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const year = tomorrow.getFullYear();
+        const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+        const day = String(tomorrow.getDate()).padStart(2, '0');
+        const tomorrowStr = `${year}-${month}-${day}`;
+        
+        // Fetch tomorrow's schedule
+        fetch(`${API_URL}/schedule/${tomorrowStr}`)
+            .then(res => res.json())
+            .then(data => {
+                console.log('Tomorrow schedule loaded:', data);
+                displaySchedule(data);
+            })
+            .catch(err => {
+                console.error('Failed to load tomorrow schedule:', err);
+                document.getElementById('nextDeparture').textContent = 'Service resumes at 4:45 AM';
+                document.getElementById('countdown').textContent = 'Check schedule';
+            });
+        return;
+    }
+    
+    // Otherwise show "no more today"
+    document.getElementById('nextDeparture').textContent = 'No more today';
+    document.getElementById('countdown').textContent = 'Service resumes tomorrow';
+    document.getElementById('vesselName').textContent = 'See schedule';
+    return;
+}
 
             // Display next departure
             const next = upcoming[0];
