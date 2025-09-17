@@ -471,12 +471,17 @@
             try {
                 console.log('Loading ferry data from:', API_URL);
                 
-                // Get today's date
-                const today = new Date().toISOString().split('T')[0];
-                
-                // Fetch all data endpoints
-                const [scheduleRes, vesselsRes, terminalsRes, alertsRes] = await Promise.all([
-                    fetch(`${API_URL}/schedule/${today}`).catch(err => {
+// Get today's date
+const now = new Date();
+const today = now.toISOString().split('T')[0];
+
+console.log('Current Pacific time:', now.toLocaleString('en-US', {timeZone: 'America/Los_Angeles'}));
+console.log('Current UTC time:', now.toISOString());
+console.log('Date being requested:', today);
+
+// Fetch all data endpoints
+const [scheduleRes, vesselsRes, terminalsRes, alertsRes] = await Promise.all([
+    fetch(`${API_URL}/schedule/${today}`).catch(err => {
                         console.error('Schedule fetch error:', err);
                         return null;
                     }),
