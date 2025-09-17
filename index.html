@@ -542,11 +542,7 @@
         // Display schedule from API
 function displaySchedule(data) {
     // DEBUG: Log what we're receiving
-    const now = new Date();
     console.log('=== DEBUG displaySchedule ===');
-    console.log('Current time:', now.toLocaleTimeString());
-    console.log('Current hour (24h):', now.getHours());
-    console.log('Data received:', data);
     
     if (!data || !data.schedules) {
         console.warn('Invalid schedule data');
@@ -554,16 +550,24 @@ function displaySchedule(data) {
         return;
     }
 
+    // ... your existing code that declares 'now' somewhere here ...
+    
+    // Then add the debug logs after 'now' is declared:
+    const now = new Date();  // This should already exist in your code
+    console.log('Current time:', now.toLocaleTimeString());
+    console.log('Current hour (24h):', now.getHours());
+    console.log('Data received:', data);
+    
     const direction = currentDirection === 'bainbridge-seattle' ? 'toSeattle' : 'toBainbridge';
     const sailings = data.schedules[direction];
     
-    // DEBUG: Log the sailings
     console.log('Direction:', direction);
-    console.log('Sailings:', sailings);
+    console.log('Sailings:', sailings ? sailings.length + ' sailings' : 'none');
     
     if (sailings && sailings.length > 0) {
         console.log('First sailing:', sailings[0]);
-        console.log('First sailing time:', new Date(sailings[0].depart));
+        console.log('First sailing time:', new Date(sailings[0].depart).toLocaleTimeString());
+        console.log('Last sailing:', sailings[sailings.length - 1]);
     }
     
     // ... rest of your function
@@ -582,7 +586,6 @@ function displaySchedule(data) {
             }
 
             // Get current Pacific time more reliably
-            const now = new Date();
             
             // Find upcoming sailings
             const upcoming = sailings.filter(sailing => {
