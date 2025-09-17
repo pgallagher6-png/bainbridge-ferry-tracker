@@ -540,21 +540,33 @@
         }
 
         // Display schedule from API
-        function displaySchedule(data) {
-            if (!data || !data.schedules) {
-                console.warn('Invalid schedule data');
-                loadFallbackSchedule();
-                return;
-            }
+function displaySchedule(data) {
+    // DEBUG: Log what we're receiving
+    const now = new Date();
+    console.log('=== DEBUG displaySchedule ===');
+    console.log('Current time:', now.toLocaleTimeString());
+    console.log('Current hour (24h):', now.getHours());
+    console.log('Data received:', data);
+    
+    if (!data || !data.schedules) {
+        console.warn('Invalid schedule data');
+        loadFallbackSchedule();
+        return;
+    }
 
-            const direction = currentDirection === 'bainbridge-seattle' ? 'toSeattle' : 'toBainbridge';
-            const sailings = data.schedules[direction];
-            
-            if (!sailings || sailings.length === 0) {
-                console.warn('No sailings found for direction:', direction);
-                loadFallbackSchedule();
-                return;
-            }
+    const direction = currentDirection === 'bainbridge-seattle' ? 'toSeattle' : 'toBainbridge';
+    const sailings = data.schedules[direction];
+    
+    // DEBUG: Log the sailings
+    console.log('Direction:', direction);
+    console.log('Sailings:', sailings);
+    
+    if (sailings && sailings.length > 0) {
+        console.log('First sailing:', sailings[0]);
+        console.log('First sailing time:', new Date(sailings[0].depart));
+    }
+    
+    // ... rest of your function
 
             // Update terminal names
             if (currentDirection === 'bainbridge-seattle') {
