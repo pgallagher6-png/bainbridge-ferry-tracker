@@ -551,19 +551,6 @@ function displaySchedule(data) {
     
     // ... rest of your function
 
-            // Update terminal names
-            if (currentDirection === 'bainbridge-seattle') {
-                document.getElementById('departTerminalName').textContent = 'BAINBRIDGE (WINSLOW)';
-                document.getElementById('arriveTerminalName').textContent = 'SEATTLE (COLMAN DOCK)';
-                document.getElementById('departTerminalStatus').textContent = 'Terminal Open';
-                document.getElementById('arriveTerminalStatus').textContent = 'Terminal Open';
-            } else {
-                document.getElementById('departTerminalName').textContent = 'SEATTLE (COLMAN DOCK)';
-                document.getElementById('arriveTerminalName').textContent = 'BAINBRIDGE (WINSLOW)';
-                document.getElementById('departTerminalStatus').textContent = 'Terminal Open';
-                document.getElementById('arriveTerminalStatus').textContent = 'Terminal Open';
-            }
-
             // Get current Pacific time more reliably
             
             // Find upcoming sailings
