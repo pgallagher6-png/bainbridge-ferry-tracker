@@ -59,41 +59,10 @@ displaySchedule(data) {
     }
 
     const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
     
-    // Separate AM and PM sailings
-    const amSailings = [];
-    const pmSailings = [];
-    
-    sailings.forEach(sailing => {
-        const sailTime = new Date(sailing.depart);
-        const sailHour = sailTime.getHours();
-        
-        if (sailHour < 12) {
-            amSailings.push(sailing);
-        } else {
-            pmSailings.push(sailing);
-        }
-    });
-    
-    // Get upcoming PM sailings first
-    let upcoming = pmSailings.filter(sailing => new Date(sailing.depart) > now);
-    
-    // If no PM sailings left (or it's early morning), add tomorrow's AM sailings
-    if (upcoming.length === 0 || currentHour < 4) {
-        amSailings.forEach(sailing => {
-            const sailTime = new Date(sailing.depart);
-            // These AM times must be tomorrow
-            sailTime.setDate(sailTime.getDate() + 1);
-            sailing.depart = sailTime.toISOString();
-            upcoming.push(sailing);
-        });
-    }
-    
-    // Limit to 5 and sort by time
-    upcoming = upcoming
-        .sort((a, b) => new Date(a.depart) - new Date(b.depart))
+    // Simply filter for future sailings without any AM/PM logic
+    const upcoming = sailings
+        .filter(sailing => new Date(sailing.depart) > now)
         .slice(0, 5);
 
     if (upcoming.length === 0) {
@@ -109,29 +78,28 @@ displaySchedule(data) {
     
     updateElement('nextDeparture', formatTime(this.nextDepartureTime));
     updateElement('vesselName', next.vesselName ? `M/V ${next.vesselName}` : 'Vessel TBD');
-        
-        // Display schedule list
-        const scheduleList = document.getElementById('scheduleList');
-        if (scheduleList) {
-            scheduleList.innerHTML = '';
-            upcoming.forEach((sailing, index) => {
-                const time = new Date(sailing.depart);
-                const item = document.createElement('div');
-                item.className = 'schedule-item';
-                item.innerHTML = `
-                    <div>
-                        <div class="schedule-time">${formatTime(time)}</div>
-                        <div class="schedule-vessel">${sailing.vesselName || 'TBD'}</div>
-                    </div>
-                    <div class="schedule-vessel">${index === 0 ? 'NEXT' : ''}</div>
-                `;
-                scheduleList.appendChild(item);
-            });
-        }
-        
-        // Update terminal status
-        this.updateTerminalStatus();
+    
+    // Display schedule list
+    const scheduleList = document.getElementById('scheduleList');
+    if (scheduleList) {
+        scheduleList.innerHTML = '';
+        upcoming.forEach((sailing, index) => {
+            const time = new Date(sailing.depart);
+            const item = document.createElement('div');
+            item.className = 'schedule-item';
+            item.innerHTML = `
+                <div>
+                    <div class="schedule-time">${formatTime(time)}</div>
+                    <div class="schedule-vessel">${sailing.vesselName || 'TBD'}</div>
+                </div>
+                <div class="schedule-vessel">${index === 0 ? 'NEXT' : ''}</div>
+            `;
+            scheduleList.appendChild(item);
+        });
     }
+    
+    this.updateTerminalStatus();
+}
 
     updateCountdown() {
         if (!this.nextDepartureTime) return;
