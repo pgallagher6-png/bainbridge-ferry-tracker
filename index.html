@@ -467,20 +467,29 @@
         }
 
         // Load all ferry data
-        async function loadFerryData() {
-            try {
-                console.log('Loading ferry data from:', API_URL);
-                
-// Get today's date
-const now = new Date();
-const today = now.toISOString().split('T')[0];
-
-console.log('Current Pacific time:', now.toLocaleString('en-US', {timeZone: 'America/Los_Angeles'}));
-console.log('Current UTC time:', now.toISOString());
-console.log('Date being requested:', today);
-
-// Fetch all data endpoints
-const [scheduleRes, vesselsRes, terminalsRes, alertsRes] = await Promise.all([
+async function loadFerryData() {
+    try {
+        console.log('Loading ferry data from:', API_URL);
+        
+        // Get today's date in PACIFIC timezone, not UTC
+        const now = new Date();
+        const pacificDateStr = now.toLocaleDateString('en-US', {
+            timeZone: 'America/Los_Angeles',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+        
+        // Convert MM/DD/YYYY to YYYY-MM-DD
+        const [month, day, year] = pacificDateStr.split('/');
+        const today = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        
+        console.log('Current Pacific time:', now.toLocaleString('en-US', {timeZone: 'America/Los_Angeles'}));
+        console.log('Current UTC time:', now.toISOString());
+        console.log('Pacific date being requested:', today);
+        
+        // Fetch all data endpoints
+        const [scheduleRes, vesselsRes, terminalsRes, alertsRes] = await Promise.all([
     fetch(`${API_URL}/schedule/${today}`).catch(err => {
                         console.error('Schedule fetch error:', err);
                         return null;
