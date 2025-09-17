@@ -919,7 +919,7 @@ if (nextFerry) {
     // No more ferries today
     document.getElementById('nextDeparture').textContent = 'No more today';
     document.getElementById('countdown').textContent = 'See full schedule';
-    wind
+    window.nextDepartureTime = null;
 }  // THIS CLOSING BRACE WAS IN THE WRONG PLACE
 
 // Camera functionality - THESE SHOULD BE OUTSIDE loadFallbackSchedule
