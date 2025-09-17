@@ -869,31 +869,67 @@ function loadFallbackSchedule() {
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     
-    // Find next departure
-    for (const timeStr of schedule) {
-        const [time, period] = timeStr.split(' ');
-        const [hours, minutes] = time.split(':');
-        let hour = parseInt(hours);
-        if (period === 'PM' && hour !== 12) hour += 12;
-        if (period === 'AM' && hour === 12) hour = 0;
+  // Find next departure
+const now = new Date();
+const pacificNow = new Date(now.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
+const currentHours = pacificNow.getHours();
+const currentMinutes = currentHours * 60 + pacificNow.getMinutes();
+
+let nextTime = null;
+
+for (const timeStr of schedule) {
+    const [time, period] = timeStr.split(' ');
+    const [hours, minutes] = time.split(':').map(Number);
+    
+    let hour24 = hours;
+    if (period === 'PM' && hours !== 12) hour24 += 12;
+    if (period === 'AM' && hours === 12) hour24 = 0;
+    
+    // Create a Date object for this departure time
+    const departureTime = new Date(pacificNow);
+    departureTime.setHours(hour24, minutes, 0, 0);
+    
+    // If this time has passed today, skip it
+    if (departureTime > pacificNow) {
+        nextTime = departureTime;
         
-        const departureMinutes = hour * 60 + parseInt(minutes);
+        // Store for countdown timer
+        window.nextDepartureTime = nextTime;
         
-        if (departureMinutes > currentMinutes) {
-            document.getElementById('nextDeparture').textContent = timeStr;
-            
-            const minutesUntil = departureMinutes - currentMinutes;
-            if (minutesUntil > 60) {
-                const h = Math.floor(minutesUntil / 60);
-                const m = minutesUntil % 60;
-                document.getElementById('countdown').textContent = `In ${h}h ${m}m`;
-            } else {
-                document.getElementById('countdown').textContent = `In ${minutesUntil} minutes`;
-            }
-            
-            break;
+        // Display the time
+        document.getElementById('nextDeparture').textContent = timeStr;
+        
+        // Calculate and display countdown
+        const minutesUntil = Math.floor((nextTime - pacificNow) / 60000);
+        if (minutesUntil > 60) {
+            const h = Math.floor(minutesUntil / 60);
+            const m = minutesUntil % 60;
+            document.getElementById('countdown').textContent = `In ${h}h ${m}m`;
+        } else {
+            document.getElementById('countdown').textContent = `In ${minutesUntil} minutes`;
         }
+        
+        break;
     }
+}
+
+// If no ferry found today, get the first one tomorrow
+if (!nextTime && schedule.length > 0) {
+    const [time, period] = schedule[0].split(' ');
+    const [hours, minutes] = time.split(':').map(Number);
+    
+    let hour24 = hours;
+    if (period === 'PM' && hours !== 12) hour24 += 12;
+    if (period === 'AM' && hours === 12) hour24 = 0;
+    
+    nextTime = new Date(pacificNow);
+    nextTime.setDate(nextTime.getDate() + 1); // Tomorrow
+    nextTime.setHours(hour24, minutes, 0, 0);
+    
+    window.nextDepartureTime = nextTime;
+    document.getElementById('nextDeparture').textContent = schedule[0];
+    document.getElementById('countdown').textContent = 'Tomorrow';
+}
     
     // Update other fields with defaults
     document.getElementById('ferryStatus').textContent = 'Schedule Mode';
