@@ -869,9 +869,9 @@ function loadFallbackSchedule() {
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     
-  // Find next departure
-const now = new Date();
-const pacificNow = new Date(now.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
+// Find next departure
+const currentTime = new Date();
+const pacificNow = new Date(currentTime.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
 const currentHours = pacificNow.getHours();
 const currentMinutes = currentHours * 60 + pacificNow.getMinutes();
 
