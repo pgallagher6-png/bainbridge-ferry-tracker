@@ -476,12 +476,12 @@ async function loadFerryData() {
         const pacificNow = new Date(now.toLocaleString('en-US', {timeZone: 'America/Los_Angeles'}));
         const currentHour = pacificNow.getHours();
         
-        // If it's between midnight and 4:45 AM, we want yesterday's schedule
-        // (since those ferries are part of the previous day's service)
-        let scheduleDate = new Date(pacificNow);
-        if (currentHour < 5) {  // Before 5 AM, use yesterday's schedule
-            scheduleDate.setDate(scheduleDate.getDate() - 1);
-        }
+// If it's between midnight and 1:30 AM, we want yesterday's schedule
+// After 1:30 AM, we want today's schedule to see morning ferries
+let scheduleDate = new Date(pacificNow);
+if (currentHour < 2) {  // Only before 2 AM use yesterday's schedule
+    scheduleDate.setDate(scheduleDate.getDate() - 1);
+}
         
         // Format the date as YYYY-MM-DD
         const year = scheduleDate.getFullYear();
