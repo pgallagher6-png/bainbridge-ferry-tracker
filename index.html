@@ -636,26 +636,27 @@
         // Update countdown timer
         function updateCountdown() {
             if (!window.nextDepartureTime) return;
-            
-            const now = new Date(); // Your browser already handles timezone
+    
+            const now = new Date();
+            const pacificNow = new Date(now.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
             const diff = window.nextDepartureTime - pacificNow;
-            
+    
             if (diff <= 0) {
                 document.getElementById('countdown').textContent = 'Departing now';
                 return;
-            }
-            
+        }
+    
             const minutes = Math.floor(diff / 60000);
             const seconds = Math.floor((diff % 60000) / 1000);
-            
+    
             if (minutes > 60) {
                 const hours = Math.floor(minutes / 60);
                 const mins = minutes % 60;
-                document.getElementById('countdown').textContent = `In ${hours}h ${mins}m`;
-            } else {
-                document.getElementById('countdown').textContent = `In ${minutes}m ${seconds}s`;
-            }
-        }
+                 document.getElementById('countdown').textContent = `In ${hours}h ${mins}m`;
+        } else {
+        document.getElementById('countdown').textContent = `In ${minutes}m ${seconds}s`;
+    }
+}
 
         // Update vessel status
         function updateVesselStatus(vessels) {
