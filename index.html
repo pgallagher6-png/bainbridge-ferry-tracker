@@ -870,7 +870,7 @@ function loadFallbackSchedule() {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     
 // Find next departure
-const now = new Date();
+const currentDateTime = new Date();
 let nextTime = null;
 let nextFerry = null;
 
@@ -879,7 +879,7 @@ for (const sailing of schedule) {
     const departureTime = new Date(sailing.depart);
     
     // If this departure is in the future
-    if (departureTime > now) {
+    if (departureTime > currentDateTime) {
         nextTime = departureTime;
         nextFerry = sailing;
         break;
@@ -907,7 +907,7 @@ if (nextFerry) {
     }
     
     // Calculate and display countdown
-    const minutesUntil = Math.floor((nextTime - now) / 60000);
+    const minutesUntil = Math.floor((nextTime - currentDateTime) / 60000);
     if (minutesUntil > 60) {
         const h = Math.floor(minutesUntil / 60);
         const m = minutesUntil % 60;
@@ -919,19 +919,7 @@ if (nextFerry) {
     // No more ferries today
     document.getElementById('nextDeparture').textContent = 'No more today';
     document.getElementById('countdown').textContent = 'See full schedule';
-    window.nextDepartureTime = null;
-}
-    
-// Update other fields with defaults
-document.getElementById('ferryStatus').textContent = 'Schedule Mode';
-document.getElementById('vesselName').textContent = nextFerry ? nextFerry.vesselName : 'See schedule';
-document.getElementById('spaceAvailable').textContent = 'Normal';
-document.getElementById('waitTime').textContent = '~15 min';
-document.getElementById('onTimeStatus').textContent = 'On Schedule';
-
-// Show content
-document.getElementById('loadingState').style.display = 'none';
-document.getElementById('ferryContent').style.display = 'block';
+    wind
 }  // THIS CLOSING BRACE WAS IN THE WRONG PLACE
 
 // Camera functionality - THESE SHOULD BE OUTSIDE loadFallbackSchedule
